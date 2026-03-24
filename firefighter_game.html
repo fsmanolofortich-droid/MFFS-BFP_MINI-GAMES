@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BLAZE RUNNER — Firefighter Action</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@400;600;700&display=swap');
+:root{--f1:#ff4500;--f2:#ff8c00;--f3:#ffd700;--g:#39ff14;--r:#ff2222;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#080200;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif;overflow:hidden;color:#fff;}
+#gw{position:relative;width:900px;max-width:100vw;user-select:none;}
+canvas{display:block;width:900px;max-width:100vw;}
+#mm{position:absolute;top:6px;right:6px;width:130px;height:65px;border:1px solid #ff6a0055;z-index:8;pointer-events:none;background:rgba(0,0,0,.75);}
+/* HUD */
+#hud{display:flex;gap:6px;padding:5px 10px;background:rgba(0,0,0,.92);border:1px solid #ff6a00;border-top:none;align-items:center;flex-wrap:wrap;}
+.hb{display:flex;flex-direction:column;gap:2px;}
+.hl{font-size:8px;letter-spacing:2px;color:#ff8844;text-transform:uppercase;}
+.bo{height:8px;background:#0a0a0a;border:1px solid #2a2a2a;overflow:hidden;}
+.bi{height:100%;transition:width .12s;}
+.bh{background:linear-gradient(90deg,#880000,#ff4444);}
+.bo2{background:linear-gradient(90deg,#004488,#00ccff);}
+.bw{background:linear-gradient(90deg,#002266,#0088ff);}
+.bx{background:linear-gradient(90deg,#664400,#ffaa00);}
+#hudScore{margin-left:auto;font-family:'Black Ops One',cursive;font-size:22px;color:var(--f3);text-shadow:0 0 10px #ffd70066;}
+#hudLvl{font-size:10px;color:#888;max-width:100px;line-height:1.3;}
+#hudTimer{font-family:'Black Ops One',cursive;font-size:20px;color:#ff5555;min-width:30px;}
+#hudTimer.urg{animation:pr .4s infinite alternate;}
+@keyframes pr{from{color:#ff3333}to{color:#ffbbbb}}
+#hudObj{font-size:12px;color:#ffaa55;white-space:nowrap;}
+#hudCombo{font-family:'Black Ops One',cursive;font-size:13px;color:#ffdd00;min-width:55px;text-align:right;}
+#pb{padding:2px 10px;background:transparent;border:1px solid #ff6a0055;color:#ff8844;font:12px 'Rajdhani',sans-serif;cursor:pointer;letter-spacing:1px;}
+#pb:hover{background:#ff45001a;}
+/* SCREENS */
+.scr{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(155deg,#130400,#3a0e00,#090100);border:2px solid var(--f1);box-shadow:0 0 60px #ff450022;}
+.scr.h{display:none;}
+.st{font-family:'Black Ops One',cursive;font-size:56px;color:var(--f2);text-shadow:0 0 20px var(--f1),0 0 40px #ff000044;letter-spacing:5px;animation:flk 2s infinite;}
+@keyframes flk{0%,100%{opacity:1}45%{opacity:.85}72%{text-shadow:0 0 8px var(--f1);}}
+.ss{color:#ff9944;font-size:16px;margin-top:5px;letter-spacing:2px;}
+.ml{display:flex;flex-direction:column;gap:9px;margin-top:22px;align-items:center;}
+.mb{padding:10px 42px;background:linear-gradient(135deg,#ff4500,#ff8c00);border:none;color:#000;font-family:'Black Ops One',cursive;font-size:17px;letter-spacing:2px;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0 100%);transition:transform .12s,box-shadow .12s;box-shadow:0 3px 18px #ff450066;min-width:200px;}
+.mb:hover{transform:scale(1.05);box-shadow:0 5px 26px #ff4500aa;}
+.mb.s{background:linear-gradient(135deg,#221000,#3d1e00);color:#ffaa44;box-shadow:none;}
+.mb.s:hover{background:linear-gradient(135deg,#3d1e00,#663300);}
+.mb.d{background:linear-gradient(135deg,#180000,#320000);color:#ff5555;}
+.mb.d:hover{background:linear-gradient(135deg,#2d0000,#500000);}
+.dv{width:200px;height:1px;background:linear-gradient(90deg,transparent,#ff450044,transparent);margin:12px 0;}
+/* Level select grid — 5 cards in 2 rows */
+.lg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;max-width:560px;}
+.lc{padding:12px 14px;background:#130600;border:1px solid #ff440033;cursor:pointer;transition:all .15s;text-align:center;}
+.lc:hover{border-color:var(--f2);background:#221000;box-shadow:0 0 16px #ff440022;}
+.lc .ln{font-family:'Black Ops One',cursive;font-size:20px;color:var(--f2);}
+.lc .lname{font-size:12px;color:#ffaa55;margin-top:2px;}
+.lc .ldesc{font-size:10px;color:#555;margin-top:3px;line-height:1.4;}
+.lc .lstar{font-size:12px;margin-top:5px;}
+/* settings */
+.sr{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:14px;color:#ffaa55;}
+.sr>span{width:155px;}
+.tg{width:44px;height:20px;background:#1a0000;border:1px solid #ff440044;border-radius:10px;cursor:pointer;position:relative;transition:background .2s;}
+.tg.on{background:#bb2200;}
+.tg::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#eee;border-radius:50%;transition:left .2s;}
+.tg.on::after{left:24px;}
+input[type=range]{-webkit-appearance:none;width:90px;height:3px;background:#2a0e00;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--f2);border-radius:50%;cursor:pointer;}
+/* how to play */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;}
+.cr{font-size:13px;color:#ffaa55;}
+.ck{display:inline-block;background:#180600;border:1px solid #ff440044;padding:1px 6px;border-radius:3px;font-family:'Black Ops One',cursive;font-size:10px;color:#ff8833;margin-right:3px;}
+/* pause */
+#ps{position:absolute;inset:0;z-index:40;display:none;background:rgba(0,0,0,.82);align-items:center;justify-content:center;flex-direction:column;}
+#ps.show{display:flex;}
+/* level complete / result */
+#lcs,#rs{position:absolute;inset:0;z-index:44;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.9);}
+#lcs.show,#rs.show{display:flex;}
+.rb{border:2px solid;padding:22px 34px;text-align:center;background:#080100;max-width:500px;width:90%;}
+.rb.win{border-color:var(--g);}
+.rb.lose{border-color:var(--r);}
+.rt{font-family:'Black Ops One',cursive;font-size:34px;}
+.rt.win{color:var(--g);text-shadow:0 0 16px var(--g);}
+.rt.lose{color:var(--r);text-shadow:0 0 16px var(--r);}
+.rs2{margin-top:10px;font-size:14px;color:#bbb;line-height:2.1;}
+.rv{color:var(--f3);font-family:'Black Ops One',cursive;}
+.rbtns{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+/* toast */
+#toast{position:absolute;top:48px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.92);border:1px solid #ff6a0066;padding:5px 16px;font-size:12px;color:#ffaa44;letter-spacing:1px;pointer-events:none;z-index:60;opacity:0;transition:opacity .25s;white-space:nowrap;}
+#toast.show{opacity:1;}
+#combo{position:absolute;top:90px;right:10px;font-family:'Black Ops One',cursive;font-size:18px;color:#ffdd00;text-shadow:0 0 10px #ffaa00;pointer-events:none;z-index:20;opacity:0;transition:opacity .3s;}
+#combo.show{opacity:1;}
+/* ladder hint */
+#lhint{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid #aa7a2055;padding:3px 12px;font-size:11px;color:#cc9940;pointer-events:none;z-index:20;opacity:0;transition:opacity .3s;}
+#lhint.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="gw">
+<canvas id="gc" width="900" height="480"></canvas>
+<canvas id="mm"></canvas>
+<div id="hud">
+  <div class="hb"><div class="hl">❤ HP</div><div class="bo" style="width:88px"><div class="bi bh" id="bH" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">💨 O₂</div><div class="bo" style="width:88px"><div class="bi bo2" id="bO" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">💧 Water</div><div class="bo" style="width:88px"><div class="bi bw" id="bW" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">⚡ Boost</div><div class="bo" style="width:58px"><div class="bi bx" id="bX" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">⏱ Time</div><div id="hudTimer">—</div></div>
+  <div class="hb"><div class="hl">Mission</div><div id="hudLvl">—</div></div>
+  <div class="hb"><div class="hl">🔥/👤 Left</div><div id="hudObj">—</div></div>
+  <div id="hudScore">0</div>
+  <div id="hudCombo"></div>
+  <button id="pb" onclick="togglePause()">⏸ PAUSE</button>
+</div>
+<div id="toast"></div>
+<div id="combo"></div>
+<div id="lhint">🪜 W = Climb Up &nbsp;|&nbsp; S = Climb Down &nbsp;|&nbsp; A/D = Step Off</div>
+
+<!-- MAIN MENU -->
+<div class="scr" id="mainMenu">
+  <div class="st">🔥 BLAZE RUNNER</div>
+  <div class="ss">FIREFIGHTER EMERGENCY RESPONSE</div>
+  <div class="ml">
+    <button class="mb" onclick="showScr('levelSelect')">▶ DEPLOY</button>
+    <button class="mb s" onclick="showScr('howToPlay')">📖 HOW TO PLAY</button>
+    <button class="mb s" onclick="showScr('settings')">⚙ SETTINGS</button>
+  </div>
+  <div class="dv"></div>
+  <div style="color:#333;font-size:10px;letter-spacing:2px;">BLAZE RUNNER v4.0</div>
+</div>
+
+<!-- LEVEL SELECT -->
+<div class="scr h" id="levelSelect">
+  <div class="st" style="font-size:30px;animation:none;letter-spacing:2px;">SELECT MISSION</div>
+  <div class="lg">
+    <div class="lc" onclick="startLevel(0)"><div class="ln">01</div><div class="lname">🏠 House Fire</div><div class="ldesc">Suburban rescue.<br>Learn the ropes.</div><div class="lstar">⭐ EASY</div></div>
+    <div class="lc" onclick="startLevel(1)"><div class="ln">02</div><div class="lname">🌲 Forest Fire</div><div class="ldesc">Wildfire with wind.<br>Save the campers.</div><div class="lstar">⭐⭐ NORMAL</div></div>
+    <div class="lc" onclick="startLevel(2)"><div class="ln">03</div><div class="lname">🏭 Factory</div><div class="ldesc">Chemical plant.<br>B &amp; C class fires.</div><div class="lstar">⭐⭐⭐ HARD</div></div>
+    <div class="lc" onclick="startLevel(3)"><div class="ln">04</div><div class="lname">🏙️ Skyscraper</div><div class="ldesc">High-rise inferno.<br>Multiple floors.</div><div class="lstar">⭐⭐⭐⭐ EXTREME</div></div>
+    <div class="lc" onclick="startLevel(4)"><div class="ln">05</div><div class="lname">⛽ Oil Refinery</div><div class="ldesc">All fire classes.<br>Final challenge.</div><div class="lstar">⭐⭐⭐⭐⭐ INFERNO</div></div>
+  </div>
+  <button class="mb s" style="margin-top:16px;" onclick="showScr('mainMenu')">◀ BACK</button>
+</div>
+
+<!-- HOW TO PLAY -->
+<div class="scr h" id="howToPlay">
+  <div class="st" style="font-size:28px;animation:none;">HOW TO PLAY</div>
+  <div class="cg">
+    <div class="cr"><span class="ck">A</span><span class="ck">D</span> Move left / right</div>
+    <div class="cr"><span class="ck">W</span><span class="ck">Space</span> Jump</div>
+    <div class="cr"><span class="ck">W</span> on ladder — climb up</div>
+    <div class="cr"><span class="ck">S</span> on ladder — climb down</div>
+    <div class="cr"><span class="ck">LMB</span><span class="ck">F</span> Spray water</div>
+    <div class="cr"><span class="ck">Shift</span> Power boost spray</div>
+    <div class="cr"><span class="ck">E</span> Rescue civilian</div>
+    <div class="cr"><span class="ck">R</span> Refill at hydrant</div>
+    <div class="cr"><span class="ck">Mouse</span> Aim hose direction</div>
+    <div class="cr"><span class="ck">Esc</span><span class="ck">P</span> Pause game</div>
+  </div>
+  <div class="dv"></div>
+  <div style="font-size:12px;color:#ff9944;text-align:center;line-height:1.9;max-width:430px;">
+    🔴 <b>Class A</b> — Ordinary combustibles — water works fine<br>
+    🟠 <b>Class B</b> — Flammable liquid — aim at base, beware explosions!<br>
+    🔵 <b>Class C</b> — Electrical — use short bursts only<br>
+    🪜 Walk into a <b>golden ladder</b> and press <b>W/S</b> to climb<br>
+    💧 Refill water at <b style="color:#cc2200">red hydrants</b> — watch your oxygen!
+  </div>
+  <button class="mb s" style="margin-top:14px;" onclick="showScr('mainMenu')">◀ BACK</button>
+</div>
+
+<!-- SETTINGS -->
+<div class="scr h" id="settings">
+  <div class="st" style="font-size:30px;animation:none;">SETTINGS</div>
+  <div style="display:flex;flex-direction:column;">
+    <div class="sr"><span>Fire Spread Speed</span><span style="font-size:10px;color:#444;">Slow</span><input type="range" id="sSpread" min="1" max="3" value="2"><span style="font-size:10px;color:#444;">Fast</span></div>
+    <div class="sr"><span>Damage Rate</span><span style="font-size:10px;color:#444;">Low</span><input type="range" id="sDmg" min="1" max="3" value="2"><span style="font-size:10px;color:#444;">High</span></div>
+    <div class="sr"><span>Show Minimap</span><div class="tg on" id="tMM" onclick="this.classList.toggle('on');mmEl.style.display=this.classList.contains('on')?'block':'none'"></div></div>
+    <div class="sr"><span>Tooltips</span><div class="tg on" id="tTips" onclick="this.classList.toggle('on')"></div></div>
+  </div>
+  <button class="mb s" style="margin-top:22px;" onclick="showScr('mainMenu')">◀ BACK</button>
+</div>
+
+<!-- PAUSE -->
+<div id="ps">
+  <div style="font-family:'Black Ops One',cursive;font-size:36px;color:var(--f2);margin-bottom:16px;text-shadow:0 0 12px var(--f1);">⏸ PAUSED</div>
+  <div class="ml">
+    <button class="mb" onclick="togglePause()">▶ RESUME</button>
+    <button class="mb s" onclick="restartLvl()">↺ RESTART</button>
+    <button class="mb s" onclick="goHowTo()">📖 CONTROLS</button>
+    <button class="mb d" onclick="quitMenu()">✖ MAIN MENU</button>
+  </div>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div id="lcs">
+  <div class="rb win">
+    <div class="rt win">✅ MISSION CLEAR!</div>
+    <div class="rs2" id="lcStats"></div>
+    <div class="rbtns" id="lcBtns"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="rs">
+  <div class="rb" id="rBox">
+    <div class="rt" id="rTitle"></div>
+    <div class="rs2" id="rStats"></div>
+    <div class="rbtns" id="rBtns"></div>
+  </div>
+</div>
+</div><!-- #gw -->
+
+<script>
+// ══════════════════════════════════════════
+//  CORE SETUP
+// ══════════════════════════════════════════
+const gc=document.getElementById('gc'),ctx=gc.getContext('2d');
+const W=900,H=480,T=32;
+gc.width=W;gc.height=H;
+const mmEl=document.getElementById('mm'),mmX=mmEl.getContext('2d');
+mmEl.width=130;mmEl.height=65;
+
+const gset=id=>{const e=document.getElementById(id);return e?parseInt(e.value):2;};
+const tog=id=>{const e=document.getElementById(id);return !e||e.classList.contains('on');};
+
+// ══════════════════════════════════════════
+//  LEVEL DATA  (5 levels)
+// ══════════════════════════════════════════
+const LEVELS=[
+  {name:"01 — House Fire",    time:130, fires:4, civs:3, bg:0, wind:{x:.08,y:0},  desc:"Suburban house ablaze — rescue the trapped family!"},
+  {name:"02 — Forest Fire",   time:90,  fires:7, civs:3, bg:1, wind:{x:.42,y:.05},desc:"Wildfire spreading fast — evacuate the campers!"},
+  {name:"03 — Factory Fire",  time:75,  fires:8, civs:4, bg:2, wind:{x:-.22,y:0}, desc:"Chemical plant emergency — B & C class fires!"},
+  {name:"04 — Skyscraper",    time:85,  fires:9, civs:5, bg:3, wind:{x:.1,y:0},   desc:"High-rise inferno — reach the upper floors!"},
+  {name:"05 — Oil Refinery",  time:70,  fires:10,civs:5, bg:4, wind:{x:.3,y:0},   desc:"Final challenge — all fire classes, maximum danger!"},
+];
+
+// ══════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════
+let gst='menu',paused=false;
+let score=0,lvlScore=0,firesSaved=0,civsRescued=0,combo=0,comboTimer=0;
+let curLvl=0,ld,timer=0,tAcc=0,fAcc=0,dt=0,lastT=0,afr=null;
+let plats=[],hydrants=[],ladders=[],fires=[],civs=[],drops=[],smk=[],floats=[],blasts=[];
+let sprayHeld=false,boostHeld=false,mX=W/2,mY=H/2;
+const K={};
+
+// Player
+const P={x:60,y:400,w:22,h:36,vx:0,vy:0,onGround:false,onLadder:false,
+  facing:1,health:100,oxygen:100,water:100,boost:100,
+  crouching:false,sprayAngle:0,spraying:false,inv:0};
+const GRAV=.52,JMP=-11.5,SPD=3.4,LSPD=2.0;
+
+// ══════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ══════════════════════════════════════════
+const SCRIDS=['mainMenu','levelSelect','howToPlay','settings'];
+function showScr(id){SCRIDS.forEach(s=>document.getElementById(s).classList.toggle('h',s!==id));}
+function hideOverlays(){
+  document.getElementById('ps').classList.remove('show');
+  document.getElementById('lcs').classList.remove('show');
+  document.getElementById('rs').classList.remove('show');
+}
+function togglePause(){
+  if(gst==='playing'){gst='paused';paused=true;document.getElementById('ps').classList.add('show');}
+  else if(gst==='paused'){gst='playing';paused=false;document.getElementById('ps').classList.remove('show');lastT=performance.now();}
+}
+function quitMenu(){gst='menu';paused=false;hideOverlays();showScr('mainMenu');}
+function restartLvl(){hideOverlays();startLevel(curLvl);}
+function goHowTo(){hideOverlays();quitMenu();showScr('howToPlay');}
+
+let toastTO=null;
+function toast(msg,dur=2200){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  if(toastTO)clearTimeout(toastTO);
+  toastTO=setTimeout(()=>el.classList.remove('show'),dur);
+}
+function showComboPopup(n){
+  const el=document.getElementById('combo');
+  el.textContent='🔥 x'+n+' COMBO!';el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1600);
+}
+
+// Ladder hint
+let lhintTO=null;
+function showLadderHint(){
+  const el=document.getElementById('lhint');el.classList.add('show');
+  if(lhintTO)clearTimeout(lhintTO);
+  lhintTO=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════
+//  TERRAIN HELPERS
+// ══════════════════════════════════════════
+function ap(x,y,w,h,t){plats.push({x,y,w,h,type:t});}
+
+// Ladder: cx = centre x of the ladder column, y1 = top edge, y2 = bottom edge
+// The ladder occupies a 1-tile-wide zone centred on cx
+function al(cx,y1,y2){ladders.push({cx,y1,y2,half:T*.45});}
+
+function getGroundY(x){
+  let my=H-T;
+  for(const p of plats){
+    if(p.type==='wall'||p.type==='tank') continue;
+    if(x>=p.x&&x<=p.x+p.w&&p.y<my) my=p.y;
+  }
+  return my;
+}
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+
+// ══════════════════════════════════════════
+//  BUILD LEVELS
+// ══════════════════════════════════════════
+function buildLevel(idx){
+  // Always: full ground row
+  for(let c=0;c<28;c++) ap(c*T,H-T,T,T,'ground');
+
+  if(idx===0){ // ── HOUSE FIRE ──────────────────────────
+    // Porch steps: 2 steps of 32px each, 3 tiles wide — very easy to walk up
+    ap(0,      H-T*2, T*3, T, 'porch');  // step 1  (y=416)
+    ap(T*2,    H-T*3, T*3, T, 'porch');  // step 2  (y=384)
+
+    // House left wall (col 5)
+    for(let r=0;r<8;r++) ap(T*5, H-T*(r+3), T, T, 'wall');
+    // House right wall (col 15)
+    for(let r=0;r<8;r++) ap(T*15,H-T*(r+3), T, T, 'wall');
+
+    // Floor 1  y=H-T*3 = 384
+    ap(T*5, H-T*3,  T*10, T, 'floor');
+
+    // Interior stairs floor1→floor2  (zigzag up left side, each step clearly reachable)
+    ap(T*6,  H-T*4, T*2, T, 'stair');   // 416 → 384 is one step
+    ap(T*8,  H-T*5, T*2, T, 'stair');
+    ap(T*10, H-T*6, T*2, T, 'stair');
+    ap(T*12, H-T*7, T*2, T, 'stair');
+
+    // Floor 2  y=H-T*7 = 256
+    ap(T*5, H-T*7, T*10, T, 'floor');
+
+    // Interior stairs floor2→floor3 (right side going back left)
+    ap(T*13, H-T*8,  T*2, T, 'stair');
+    ap(T*11, H-T*9,  T*2, T, 'stair');
+    ap(T*9,  H-T*10, T*2, T, 'stair');
+    ap(T*7,  H-T*11, T*2, T, 'stair');
+
+    // Floor 3 / attic  y=H-T*11 = 128
+    ap(T*5, H-T*11, T*10, T, 'floor');
+
+    // Roof ledge
+    ap(T*6,  H-T*13, T*8, T, 'roof');
+
+    // ── LADDERS (drawn on outside walls so player can climb exterior) ──
+    // Left exterior ladder: centre on left wall, from ground up to floor3
+    al(T*5+T/2,  H-T*11, H-T*1);  // cx=5.5 tiles, top=floor3, bottom=ground
+
+    // Right exterior ladder: right side, ground to floor3
+    al(T*15+T/2, H-T*11, H-T*1);
+
+    // Interior shortcut ladder floor1→floor3 (inside house, left side)
+    al(T*5+T*1.5, H-T*11, H-T*3);
+
+    // Right outdoor area — stepped down to ground
+    ap(T*16, H-T*11, T*3, T, 'floor');
+    ap(T*18, H-T*9,  T*3, T, 'floor');
+    ap(T*20, H-T*7,  T*3, T, 'floor');
+    ap(T*22, H-T*5,  T*3, T, 'floor');
+    ap(T*24, H-T*3,  T*4, T, 'floor');
+
+    // Hydrants
+    hydrants.push({x:T*1,   y:H-T*3, r:14});
+    hydrants.push({x:T*25,  y:H-T*4, r:14});
+    hydrants.push({x:T*26.5,y:H-T*2, r:16, truck:true});
+
+  } else if(idx===1){ // ── FOREST FIRE ──────────────────────
+    // Gently terraced hill — 1 tile rise per section, 4 tiles wide = very walkable
+    ap(0,      H-T*2, T*4, T, 'tree');
+    ap(T*3,    H-T*3, T*4, T, 'tree');
+    ap(T*6,    H-T*4, T*4, T, 'tree');
+    ap(T*9,    H-T*5, T*4, T, 'tree');
+    ap(T*12,   H-T*6, T*4, T, 'tree');
+    ap(T*15,   H-T*5, T*4, T, 'tree');
+    ap(T*18,   H-T*4, T*4, T, 'tree');
+    ap(T*21,   H-T*3, T*4, T, 'tree');
+    ap(T*24,   H-T*2, T*4, T, 'tree');
+    // Cliff ledge
+    ap(T*10,   H-T*8, T*5, T, 'floor');
+    ap(T*13,   H-T*10,T*4, T, 'floor');
+    // Ladder on cliff
+    al(T*10+T/2, H-T*10, H-T*5);
+    // Connecting bridge platform
+    ap(T*3,  H-T*3,  T*1,  T, 'floor');
+    ap(T*7,  H-T*4,  T*1,  T, 'floor');
+    hydrants.push({x:T*1.5, y:H-T*3, r:14});
+    hydrants.push({x:T*23,  y:H-T*3, r:14});
+
+  } else if(idx===2){ // ── FACTORY ──────────────────────────
+    ap(0,       H-T*2,  T*4,  T, 'floor');
+    ap(T*2,     H-T*4,  T*4,  T, 'girder');
+    ap(T*4,     H-T*6,  T*4,  T, 'girder');
+    ap(T*6,     H-T*8,  T*4,  T, 'girder');
+    ap(T*8,     H-T*10, T*12, T, 'girder');
+    ap(T*20,    H-T*8,  T*4,  T, 'girder');
+    ap(T*22,    H-T*6,  T*4,  T, 'girder');
+    ap(T*24,    H-T*4,  T*4,  T, 'girder');
+    ap(T*24,    H-T*2,  T*4,  T, 'floor');
+    ap(T*8,     H-T*2,  T*3,  T, 'floor');
+    ap(T*17,    H-T*2,  T*3,  T, 'floor');
+    ap(T*11,    H-T*3,  T*2,  T*2,'tank');
+    ap(T*15,    H-T*3,  T*2,  T*2,'tank');
+    ap(T*9,     H-T*12, T*3,  T, 'girder');
+    ap(T*16,    H-T*12, T*3,  T, 'girder');
+    al(T*1+T/2, H-T*10, H-T*2);
+    al(T*25+T/2,H-T*10, H-T*2);
+    hydrants.push({x:T*1.5,  y:H-T*3,  r:14});
+    hydrants.push({x:T*13.5, y:H-T*11, r:14});
+    hydrants.push({x:T*26,   y:H-T*3,  r:14});
+
+  } else if(idx===3){ // ── SKYSCRAPER ──────────────────────
+    // Wide lobby ground
+    ap(0,       H-T*2,  T*6,  T, 'floor');
+    ap(T*22,    H-T*2,  T*6,  T, 'floor');
+    // Building left side: every 3 floors, wide ledges
+    ap(T*2,     H-T*5,  T*8,  T, 'floor');   // floor 2
+    ap(T*2,     H-T*8,  T*8,  T, 'floor');   // floor 3
+    ap(T*2,     H-T*11, T*8,  T, 'floor');   // floor 4
+    ap(T*2,     H-T*14, T*8,  T, 'floor');   // roof L
+    // Building right side mirror
+    ap(T*18,    H-T*5,  T*8,  T, 'floor');
+    ap(T*18,    H-T*8,  T*8,  T, 'floor');
+    ap(T*18,    H-T*11, T*8,  T, 'floor');
+    ap(T*18,    H-T*14, T*8,  T, 'floor');
+    // Centre bridge floors
+    ap(T*9,     H-T*7,  T*10, T, 'floor');   // mid bridge 1
+    ap(T*9,     H-T*12, T*10, T, 'floor');   // mid bridge 2
+    // Left ladders inside building
+    al(T*2+T/2, H-T*14, H-T*2);
+    al(T*9+T/2, H-T*12, H-T*5);
+    // Right ladders
+    al(T*25+T/2,H-T*14, H-T*2);
+    al(T*18+T/2,H-T*12, H-T*5);
+    hydrants.push({x:T*1,    y:H-T*3,  r:14});
+    hydrants.push({x:T*14,   y:H-T*8,  r:14});
+    hydrants.push({x:T*26.5, y:H-T*3,  r:14});
+    hydrants.push({x:T*26.5, y:H-T*2,  r:16, truck:true});
+
+  } else { // ── OIL REFINERY ────────────────────────
+    // Ground extensions
+    ap(0,       H-T*2,  T*5,  T, 'floor');
+    ap(T*23,    H-T*2,  T*5,  T, 'floor');
+    // Pipe catwalks — asymmetric, interesting
+    ap(T*3,     H-T*4,  T*5,  T, 'pipe');
+    ap(T*10,    H-T*3,  T*4,  T, 'pipe');
+    ap(T*6,     H-T*7,  T*6,  T, 'pipe');
+    ap(T*14,    H-T*6,  T*5,  T, 'pipe');
+    ap(T*20,    H-T*4,  T*5,  T, 'pipe');
+    // Upper level
+    ap(T*4,     H-T*10, T*8,  T, 'pipe');
+    ap(T*15,    H-T*9,  T*8,  T, 'pipe');
+    // Top platform
+    ap(T*8,     H-T*13, T*12, T, 'pipe');
+    // Storage tanks
+    ap(T*12,    H-T*4,  T*2,  T*3,'tank');
+    ap(T*17,    H-T*4,  T*2,  T*2,'tank');
+    // Ladders
+    al(T*3+T/2, H-T*10, H-T*2);
+    al(T*7+T/2, H-T*13, H-T*7);
+    al(T*22+T/2,H-T*9,  H-T*2);
+    al(T*19+T/2,H-T*13, H-T*9);
+    hydrants.push({x:T*1.5,  y:H-T*3,  r:14});
+    hydrants.push({x:T*10,   y:H-T*11, r:14});
+    hydrants.push({x:T*24.5, y:H-T*3,  r:14});
+    hydrants.push({x:T*26.5, y:H-T*2,  r:16, truck:true});
+  }
+}
+
+function spawnEntities(idx){
+  // Per-level fire spawn column lists
+  const FC=[
+    [8,9,10,11,12,13,14],       // house — inside floors
+    [4,7,9,11,13,16,19,22],     // forest
+    [5,9,11,13,15,17,19,21,23], // factory
+    [3,5,10,12,15,18,20,24,25], // skyscraper
+    [4,7,9,12,14,16,18,20,22,24]// refinery
+  ];
+  const CC=[
+    [8,11,13,21],               // house
+    [6,10,14,19,22],            // forest
+    [9,12,15,19,23],            // factory
+    [3,10,14,20,25],            // skyscraper
+    [5,9,13,16,20,23]           // refinery
+  ];
+  const fc=FC[idx];const cc=CC[idx];
+  const types=['A','A','A','B','C'];
+  for(let i=0;i<ld.fires;i++){
+    const c=fc[i%fc.length];
+    const gy=getGroundY(c*T+16)-2;
+    fires.push({x:c*T+rnd(-8,8),y:gy,size:14+rnd(2,10),intensity:.55+Math.random()*.35,
+      type:types[Math.floor(Math.random()*types.length)],age:0,alive:true});
+  }
+  for(let i=0;i<ld.civs;i++){
+    const c=cc[i%cc.length];
+    const gy=getGroundY(c*T+8)-28;
+    civs.push({x:c*T,y:gy,w:16,h:28,
+      state:i===0?'unconscious':'panicking',
+      rescued:false,vx:(Math.random()<.5?-.5:.5),timer:0});
+  }
+}
+
+// ══════════════════════════════════════════
+//  START LEVEL
+// ══════════════════════════════════════════
+function startLevel(idx){
+  curLvl=idx;ld=LEVELS[idx];
+  if(idx===0) score=0;
+  lvlScore=0;firesSaved=0;civsRescued=0;combo=0;comboTimer=0;
+  timer=ld.time;tAcc=0;fAcc=0;
+  Object.assign(P,{x:60,y:H-T*4,vx:0,vy:0,onGround:false,onLadder:false,
+    facing:1,health:100,oxygen:100,water:100,boost:100,crouching:false,spraying:false,inv:0});
+  plats=[];hydrants=[];ladders=[];fires=[];civs=[];drops=[];smk=[];floats=[];blasts=[];
+  buildLevel(idx);
+  spawnEntities(idx);
+  document.getElementById('hudLvl').textContent=ld.name;
+  SCRIDS.forEach(s=>document.getElementById(s).classList.add('h'));
+  hideOverlays();
+  gst='playing';paused=false;
+  if(!afr){lastT=performance.now();afr=requestAnimationFrame(loop);}
+  toast('🚨 '+ld.desc,3500);
+}
+
+// ══════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════
+function loop(ts){
+  dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
+  if(gst==='playing') update();
+  render();
+  afr=requestAnimationFrame(loop);
+}
+
+// ══════════════════════════════════════════
+//  UPDATE
+// ══════════════════════════════════════════
+function update(){
+  const dmgM=[.5,1,1.5][gset('sDmg')-1];
+  const sprM=[.5,1,2][gset('sSpread')-1];
+
+  tAcc+=dt;if(tAcc>=1){tAcc-=1;timer=Math.max(0,timer-1);}
+  if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0) combo=0;}
+  if(P.inv>0) P.inv-=dt;
+
+  const mvL=K['a']||K['ArrowLeft'];
+  const mvR=K['d']||K['ArrowRight'];
+  const doW=K['w']||K['ArrowUp']||K[' '];
+  const doS=K['s']||K['ArrowDown'];
+  boostHeld=!!(K['Shift']||K['shift']);
+
+  // ── LADDER LOGIC ──────────────────────────
+  // A player can grab any ladder whose centre is within half+player.w/2 of player centre
+  const pcx=P.x+P.w/2;
+  const pcy=P.y+P.h/2;
+
+  // Find the ladder the player overlaps horizontally AND vertically
+  const curLad=ladders.find(l=>{
+    const hOverlap=pcx>=l.cx-l.half-P.w*.3 && pcx<=l.cx+l.half+P.w*.3;
+    const vOverlap=P.y+P.h > l.y1 && P.y < l.y2;
+    return hOverlap && vOverlap;
+  });
+
+  if(P.onLadder){
+    P.vx=0; P.vy=0;
+    if(doW)  P.vy=-LSPD;
+    if(doS)  P.vy= LSPD;
+    // Snap X to ladder centre so player doesn't drift
+    P.x+=(curLad?curLad.cx:pcx)-pcx-P.w/2;
+    // Step off with left/right
+    if(mvL){P.vx=-SPD;P.onLadder=false;}
+    if(mvR){P.vx= SPD;P.onLadder=false;}
+    // Detach if no longer over a ladder
+    if(!curLad) P.onLadder=false;
+    // At top of ladder: let player step off upward
+    if(curLad && P.y<=curLad.y1 && !doW) P.onLadder=false;
+    // At bottom: detach when on ground
+    if(P.onGround && doS) P.onLadder=false;
+  } else {
+    // Grab ladder: press W or S while overlapping it (including from ground)
+    if(curLad && (doW||doS) && !P.onLadder){
+      // Only grab if pressing toward the ladder direction
+      // Always allow grab
+      P.onLadder=true;
+      P.vy=0;P.vx=0;
+      showLadderHint();
+    }
+    if(mvL) P.vx=-SPD;
+    else if(mvR) P.vx=SPD;
+    else P.vx*=.72;
+    P.crouching=doS&&!P.onLadder;
+    if(P.onGround && doW && !P.onLadder){P.vy=JMP;P.onGround=false;}
+  }
+
+  if(!P.onLadder) P.vy+=GRAV;
+  P.x+=P.vx; P.y+=P.vy;
+
+  // Platform collision
+  P.onGround=false;
+  for(const p of plats) collide(p);
+  P.x=Math.max(0,Math.min(W-P.w,P.x));
+  if(P.y>H){P.y=H-P.h;P.vy=0;P.onGround=true;}
+
+  // Aim
+  P.sprayAngle=Math.atan2(mY-(P.y+P.h/2), mX-(P.x+P.w/2));
+  P.facing=mX>(P.x+P.w/2)?1:-1;
+
+  // Spray
+  const useBoost=boostHeld&&P.boost>5&&sprayHeld;
+  if(sprayHeld&&P.water>0){
+    P.spraying=true;
+    P.water=Math.max(0,P.water-(useBoost?55:28)*dt);
+    if(useBoost) P.boost=Math.max(0,P.boost-40*dt);
+    spawnDrops(useBoost);
+  } else P.spraying=false;
+  if(!useBoost) P.boost=Math.min(100,P.boost+15*dt);
+
+  updateDrops();
+  updateFires(sprM);
+  updateCivs();
+  updateSmoke();
+  updateBlasts();
+
+  // Oxygen & health
+  const nearFire=fires.some(f=>f.alive&&dist(f.x,f.y,P.x+P.w/2,P.y+P.h/2)<130);
+  if(nearFire) P.oxygen=Math.max(0,P.oxygen-7*dt*dmgM);
+  else         P.oxygen=Math.min(100,P.oxygen+5*dt);
+  if(nearFire&&P.inv<=0) P.health=Math.max(0,P.health-3*dt*dmgM);
+  if(P.oxygen<15&&P.inv<=0) P.health=Math.max(0,P.health-5*dt*dmgM);
+
+  if(K['e']||K['E']) tryRescue();
+  if(K['r']||K['R']) tryRefill();
+
+  // HUD
+  document.getElementById('bH').style.width=P.health+'%';
+  document.getElementById('bO').style.width=P.oxygen+'%';
+  document.getElementById('bW').style.width=P.water+'%';
+  document.getElementById('bX').style.width=P.boost+'%';
+  document.getElementById('hudScore').textContent=score;
+  const te=document.getElementById('hudTimer');te.textContent=timer;te.className=timer<=15?'urg':'';
+  const af=fires.filter(f=>f.alive).length,ac=civs.filter(c=>!c.rescued).length;
+  document.getElementById('hudObj').textContent='🔥'+af+'  👤'+ac;
+  document.getElementById('hudCombo').textContent=combo>=2?'🔥x'+combo:'';
+  updateMinimap();
+
+  if(P.health<=0) endLevel('lose','Overcome by the flames!');
+  else if(timer<=0) endLevel('lose','Time ran out!');
+  else if(af===0&&ac===0){const b=timer*10;score+=b;lvlScore+=b;showLevelComplete(b);}
+}
+
+// ── Platform collision ──
+function collide(p){
+  if(p.type==='wall') return;
+  const ph=P.crouching?P.h*.62:P.h;
+  const px2=P.x+P.w,py2=P.y+ph,bx2=p.x+p.w,by2=p.y+p.h;
+  if(px2<=p.x||P.x>=bx2||py2<=p.y||P.y>=by2) return;
+  const ol=px2-p.x,or2=bx2-P.x,ot=py2-p.y,ob=by2-P.y,m=Math.min(ol,or2,ot,ob);
+  if(m===ot&&P.vy>=0){P.y=p.y-ph;P.vy=0;P.onGround=true;}
+  else if(m===ob&&P.vy<0){P.y=by2;P.vy=1;}
+  else if(m===ol&&P.vy>-2){P.x=p.x-P.w;P.vx=0;}
+  else if(m===or2&&P.vy>-2){P.x=bx2;P.vx=0;}
+}
+
+// ── Water ──
+function spawnDrops(boost){
+  const a=P.sprayAngle,spd=boost?13:9.5,n=boost?5:3;
+  for(let i=0;i<n;i++){
+    const sp=(Math.random()-.5)*(boost?.16:.26);
+    drops.push({x:P.x+P.w/2+Math.cos(a)*12,y:P.y+P.h*.3+Math.sin(a)*12,
+      vx:Math.cos(a+sp)*spd+P.vx*.2,vy:Math.sin(a+sp)*spd,life:1,r:boost?4:3,boost});
+  }
+}
+function updateDrops(){
+  for(const d of drops){
+    d.x+=d.vx;d.y+=d.vy;d.vy+=.28;d.life-=1.3*dt;
+    for(const f of fires){
+      if(!f.alive) continue;
+      if(dist(d.x,d.y,f.x,f.y)<f.size+(d.boost?16:10)){
+        const dmg=d.boost?.2:.12;
+        f.intensity-=dmg;f.size-=dmg*10;d.life=0;
+        spawnSteam(f.x,f.y);
+        if(f.intensity<=0||f.size<3){
+          f.alive=false;combo++;comboTimer=3;
+          const pts=(150+combo*30)*(curLvl+1);
+          score+=pts;lvlScore+=pts;firesSaved++;
+          addFloat(f.x,f.y,'🔥 +'+pts,'#ffd700');
+          if(combo>=2){showComboPopup(combo);score+=combo*50;}
+        }
+      }
+    }
+  }
+  drops=drops.filter(d=>d.life>0&&d.y<H+10);
+}
+
+// ── Fires ──
+function spawnSteam(x,y){
+  for(let i=0;i<5;i++) smk.push({x:x+rnd(-4,4),y,vx:(Math.random()-.5)*1.3,vy:-1.5-Math.random(),alpha:.45,r:7,life:1,steam:true});
+}
+function updateFires(mult){
+  fAcc+=dt;
+  for(const f of fires){
+    if(!f.alive) continue;
+    f.age+=dt;
+    if(f.age<20) f.intensity=Math.min(1,f.intensity+.016*dt);
+    if(Math.random()<.28) smk.push({x:f.x+rnd(-8,8),y:f.y-f.size*.4,
+      vx:(Math.random()-.5)*.6+ld.wind.x*.7,vy:-.85-Math.random()*.4,
+      alpha:.45+Math.random()*.2,r:10+Math.random()*13,life:1,steam:false});
+    if(f.type==='B'&&f.age>8&&Math.random()<.0008){
+      spawnBlast(f.x,f.y);f.intensity=Math.min(1,f.intensity+.25);
+      if(dist(f.x,f.y,P.x+P.w/2,P.y+P.h/2)<90&&P.inv<=0){
+        P.health=Math.max(0,P.health-18);P.inv=2;toast('💥 EXPLOSION — avoid Class B fires!',2500);}
+    }
+  }
+  if(fAcc>3.5/mult){
+    fAcc=0;
+    fires.filter(f=>f.alive).forEach(f=>{
+      if(Math.random()<.15*f.intensity&&fires.length<28){
+        const ang=Math.random()*Math.PI*2,sd=30+rnd(0,22);
+        const nx=f.x+Math.cos(ang)*sd+ld.wind.x*14,ny=f.y+Math.sin(ang)*sd;
+        if(nx>8&&nx<W-8) fires.push({x:nx,y:ny,size:9,intensity:.28,type:f.type,age:0,alive:true});
+      }
+    });
+  }
+}
+function spawnBlast(x,y){for(let i=0;i<18;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*4;blasts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,r:2+Math.random()*4});}}
+function updateBlasts(){for(const b of blasts){b.x+=b.vx;b.y+=b.vy;b.vy+=.18;b.life-=2*dt;}blasts=blasts.filter(b=>b.life>0);}
+
+// ── Smoke ──
+function updateSmoke(){
+  for(const s of smk){s.x+=s.vx+ld.wind.x*.3;s.y+=s.vy;s.alpha-=.5*dt;s.r+=2*dt;s.life-=.5*dt;}
+  smk=smk.filter(s=>s.life>0);
+}
+
+// ── Civilians ──
+function updateCivs(){
+  for(const c of civs){
+    if(c.rescued) continue;
+    c.timer+=dt;
+    if(c.state==='panicking'&&c.timer>1.6){c.timer=0;c.vx=(Math.random()-.5)*1.5;}
+    if(c.state==='panicking'){c.x+=c.vx;c.x=Math.max(0,Math.min(W-c.w,c.x));}
+    const gy=getGroundY(c.x+c.w/2)-c.h;
+    if(c.y<gy) c.y+=4; else c.y=gy;
+  }
+}
+function tryRescue(){
+  const pcx=P.x+P.w/2,pcy=P.y+P.h/2;
+  for(const c of civs){
+    if(c.rescued||dist(pcx,pcy,c.x+c.w/2,c.y+c.h/2)>58) continue;
+    c.rescued=true;
+    const pts=300*(curLvl+1);score+=pts;lvlScore+=pts;civsRescued++;
+    addFloat(c.x,c.y,'👤 SAVED +'+pts,'#39ff14');
+    toast('✅ Civilian rescued!');P.inv=.4;
+  }
+}
+function tryRefill(){
+  const pcx=P.x+P.w/2,pcy=P.y+P.h/2;
+  for(const h of hydrants){
+    if(dist(pcx,pcy,h.x,h.y)<68){
+      P.water=Math.min(100,P.water+70*dt);
+      P.boost=Math.min(100,P.boost+22*dt);
+    }
+  }
+}
+function addFloat(x,y,t,c){floats.push({x,y,text:t,color:c,life:2,vy:-1.2});}
+function dist(x1,y1,x2,y2){return Math.hypot(x2-x1,y2-y1);}
+
+// ══════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════
+function showLevelComplete(bonus){
+  if(gst==='levelcomplete'||gst==='result') return;
+  gst='levelcomplete';
+  const stars=P.health>70?'⭐⭐⭐':P.health>40?'⭐⭐':'⭐';
+  const isLast=curLvl>=LEVELS.length-1;
+  document.getElementById('lcStats').innerHTML=`
+    <div>Fires Put Out: <span class="rv">${firesSaved}</span></div>
+    <div>Civilians Rescued: <span class="rv">${civsRescued} / ${ld.civs}</span></div>
+    <div>Health Remaining: <span class="rv">${Math.round(P.health)}%</span></div>
+    <div>Time Bonus: <span class="rv">+${bonus}</span></div>
+    <div>Mission Score: <span class="rv">${lvlScore}</span></div>
+    <div>Total Score: <span class="rv">${score}</span></div>
+    <div style="font-size:18px;margin-top:4px;">${stars}</div>`;
+  document.getElementById('lcBtns').innerHTML=isLast
+    ?`<button class="mb" onclick="showFinal()">🏆 FINAL RESULTS</button>`
+    :`<button class="mb" onclick="startLevel(${curLvl+1})">▶ NEXT MISSION</button>
+      <button class="mb s" onclick="quitMenu()">MENU</button>`;
+  document.getElementById('lcs').classList.add('show');
+}
+function showFinal(){
+  document.getElementById('lcs').classList.remove('show');gst='result';
+  document.getElementById('rBox').className='rb win';
+  document.getElementById('rTitle').className='rt win';
+  document.getElementById('rTitle').textContent='🏆 CITY SAVED!';
+  document.getElementById('rStats').innerHTML=`
+    <div style="color:var(--f3);margin-bottom:8px;">All 5 missions complete — true hero!</div>
+    <div>Final Score: <span class="rv">${score}</span></div>
+    <div style="font-size:22px;margin-top:6px;">⭐⭐⭐⭐⭐</div>`;
+  document.getElementById('rBtns').innerHTML=`<button class="mb" onclick="quitMenu()">🏠 MAIN MENU</button>`;
+  document.getElementById('rs').classList.add('show');
+}
+function endLevel(result,reason){
+  if(gst==='levelcomplete'||gst==='result') return;
+  gst='result';
+  document.getElementById('rBox').className='rb '+(result==='lose'?'lose':'win');
+  document.getElementById('rTitle').className='rt '+(result==='lose'?'lose':'win');
+  document.getElementById('rTitle').textContent=result==='lose'?'💀 MISSION FAILED':'✅ COMPLETE';
+  document.getElementById('rStats').innerHTML=`
+    <div style="color:#ff9955;margin-bottom:8px;">${reason}</div>
+    <div>Fires Put Out: <span class="rv">${firesSaved}</span></div>
+    <div>Civilians Rescued: <span class="rv">${civsRescued} / ${ld.civs}</span></div>
+    <div>Score: <span class="rv">${score}</span></div>`;
+  document.getElementById('rBtns').innerHTML=`
+    <button class="mb" onclick="restartLvl()">↺ RETRY</button>
+    <button class="mb s" onclick="quitMenu()">MENU</button>`;
+  document.getElementById('rs').classList.add('show');
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawBG();
+  // Draw ladders FIRST (below everything)
+  drawLadders();
+  drawPlatforms();
+  for(const h of hydrants) drawHydrant(h);
+  // Smoke
+  for(const s of smk){
+    ctx.save();ctx.globalAlpha=s.alpha*.5;
+    const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+    sg.addColorStop(0,s.steam?'rgba(210,230,255,.7)':'rgba(42,42,42,.9)');
+    sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  for(const f of fires){if(f.alive) drawFire(f);}
+  // Blast particles
+  for(const b of blasts){
+    ctx.save();ctx.globalAlpha=b.life;
+    ctx.fillStyle=`hsl(${20+b.life*40},100%,60%)`;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  for(const c of civs) drawCiv(c);
+  // Water drops
+  ctx.save();
+  for(const d of drops){ctx.globalAlpha=d.life;ctx.fillStyle=d.boost?'#88ddff':'#44aaff';ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+  drawPlayer();
+  if(P.spraying) drawHoseBeam();
+  // Ladder zone highlight when near (drawn on top so player sees it)
+  drawLadderNearby();
+  // Float texts
+  ctx.save();
+  floats.forEach(ft=>{
+    ft.y+=ft.vy*(dt*30);ft.life-=dt;
+    ctx.globalAlpha=Math.min(1,ft.life);
+    ctx.font='bold 14px Rajdhani';
+    ctx.strokeStyle='rgba(0,0,0,.8)';ctx.lineWidth=3;ctx.strokeText(ft.text,ft.x,ft.y);
+    ctx.fillStyle=ft.color;ctx.fillText(ft.text,ft.x,ft.y);
+  });
+  ctx.restore();
+  floats=floats.filter(ft=>ft.life>0);
+  // Low health pulse vignette
+  if(P.health<30){
+    ctx.save();
+    ctx.globalAlpha=(.3-P.health*.01)*.7*(Math.sin(performance.now()/300)*.5+.5);
+    const vg=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,H*.8);
+    vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(180,0,0,.6)');
+    ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);ctx.restore();
+  }
+}
+
+// ── Background ──
+function drawBG(){
+  const bg=curLvl;
+  const sk=ctx.createLinearGradient(0,0,0,H);
+  const skies=[
+    ['#100200','#2c0a00','#070100'],   // house — orange night
+    ['#080d00','#1a2800','#040800'],   // forest — dark green
+    ['#050508','#0e0e18','#020204'],   // factory — dark blue
+    ['#060410','#12082a','#020108'],   // skyscraper — purple
+    ['#0a0500','#220c00','#060200'],   // refinery — deep red
+  ];
+  const s=skies[bg]||skies[0];
+  sk.addColorStop(0,s[0]);sk.addColorStop(.55,s[1]);sk.addColorStop(1,s[2]);
+  ctx.fillStyle=sk;ctx.fillRect(0,0,W,H);
+  // Fire glow
+  fires.forEach(f=>{
+    if(!f.alive)return;
+    const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,180);
+    g.addColorStop(0,`rgba(255,80,0,${.14*f.intensity})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,180,0,Math.PI*2);ctx.fill();
+  });
+  // Stars
+  ctx.fillStyle='rgba(255,255,210,.28)';
+  for(let i=0;i<20;i++){ctx.beginPath();ctx.arc((Math.sin(i*137.5)*.5+.5)*W,(Math.cos(i*97.3)*.5+.5)*(H*.38),.7,0,Math.PI*2);ctx.fill();}
+  // Per-level bg art
+  if(bg===0){
+    const now=performance.now()/1000;
+    ctx.fillStyle='#140500';
+    ctx.fillRect(55,H-T*10,T*7,T*9);
+    ctx.beginPath();ctx.moveTo(55,H-T*10);ctx.lineTo(55+T*3.5,H-T*14);ctx.lineTo(55+T*7,H-T*10);ctx.closePath();ctx.fill();
+    const wf=Math.sin(now*1.7)>.1;
+    ctx.fillStyle=wf?'rgba(255,180,0,.14)':'rgba(255,100,0,.05)';
+    ctx.fillRect(75,H-T*7.5,20,16);ctx.fillRect(165,H-T*7.5,20,16);
+    // Moon
+    ctx.fillStyle='rgba(255,245,200,.18)';ctx.beginPath();ctx.arc(820,52,28,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=s[0];ctx.beginPath();ctx.arc(832,46,24,0,Math.PI*2);ctx.fill();
+  } else if(bg===1){
+    ctx.fillStyle='#0a1300';
+    for(let i=0;i<11;i++){const tx=30+i*82;ctx.beginPath();ctx.moveTo(tx,H-T*4);ctx.lineTo(tx-20,H-T);ctx.lineTo(tx+20,H-T);ctx.closePath();ctx.fill();}
+  } else if(bg===2){
+    ctx.fillStyle='#050510';
+    for(let i=0;i<6;i++){const bx=20+i*148,bh=60+i%3*50;ctx.fillRect(bx,H-T-bh,50,bh);}
+  } else if(bg===3){
+    // Skyscraper city
+    ctx.fillStyle='#080418';
+    for(let i=0;i<8;i++){
+      const bx=i*115,bh=80+i%4*55;
+      ctx.fillRect(bx,H-T-bh,60,bh);
+      // windows
+      ctx.fillStyle='rgba(255,220,80,.1)';
+      for(let wy=0;wy<bh;wy+=14)for(let wx=0;wx<3;wx++) ctx.fillRect(bx+6+wx*16,H-T-bh+wy+4,10,8);
+      ctx.fillStyle='#080418';
+    }
+  } else {
+    // Refinery: pipes & towers bg
+    ctx.fillStyle='#100500';
+    for(let i=0;i<5;i++){const bx=50+i*175;ctx.fillRect(bx,H-T*8,12,T*7);ctx.beginPath();ctx.arc(bx+6,H-T*8,14,Math.PI,0);ctx.fill();}
+  }
+}
+
+// ── Platforms ──
+const PC={
+  ground:['#3a1c00','#5a3000','#284a08'],
+  floor: ['#5a3510','#8a5520'],
+  porch: ['#4a3010','#7a5530'],
+  stair: ['#5a4020','#9a7040'],
+  roof:  ['#3a2a1a','#6a4a2a'],
+  wall:  ['#5a2e12','#3a1e0a'],
+  tree:  ['#1a3005','#243a08'],
+  girder:['#222','#3a3a3a'],
+  tank:  ['#1e3040','#2a4a5a'],
+  pipe:  ['#3a3020','#5a4a30'],
+};
+function drawPlatforms(){
+  for(const p of plats){
+    const [c1,c2,c3]=PC[p.type]||['#444','#666'];
+    ctx.fillStyle=c1;ctx.fillRect(p.x,p.y,p.w,p.h);
+    switch(p.type){
+      case 'ground':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.fillStyle=c3||'#284a08';
+        for(let i=0;i<Math.floor(p.w/10);i++) ctx.fillRect(p.x+i*10+2,p.y-3,3,4);
+        break;
+      case 'floor':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y,p.w,3);
+        ctx.strokeStyle='#3a2005';ctx.lineWidth=1;
+        for(let i=1;i<p.w/T;i++){ctx.beginPath();ctx.moveTo(p.x+i*T,p.y+3);ctx.lineTo(p.x+i*T,p.y+p.h);ctx.stroke();}
+        break;
+      case 'porch':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y,p.w,3);
+        ctx.strokeStyle='#33200a';ctx.lineWidth=1;
+        for(let i=1;i<p.w/T;i++){ctx.beginPath();ctx.moveTo(p.x+i*T,p.y);ctx.lineTo(p.x+i*T,p.y+p.h);ctx.stroke();}
+        break;
+      case 'stair':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y,p.w,3);
+        // Arrow hint so player knows these are steps
+        ctx.fillStyle='rgba(255,210,120,.18)';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.strokeStyle='#9a7040';ctx.lineWidth=1;
+        for(let i=1;i<p.w/T;i++){ctx.beginPath();ctx.moveTo(p.x+i*T,p.y);ctx.lineTo(p.x+i*T,p.y+p.h);ctx.stroke();}
+        break;
+      case 'roof':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.fillStyle='rgba(0,0,0,.12)';
+        for(let i=0;i<Math.floor(p.w/14);i++) ctx.fillRect(p.x+i*14,p.y,12,p.h);
+        break;
+      case 'wall':
+        ctx.strokeStyle='#2a1008';ctx.lineWidth=1;
+        for(let r=0;r<p.h/8;r++)for(let c=0;c<2;c++) ctx.strokeRect(p.x+c*16+(r%2)*8,p.y+r*8,16,8);
+        break;
+      case 'tree':
+        ctx.fillStyle=c2;ctx.fillRect(p.x,p.y+6,p.w,p.h-6);
+        ctx.fillStyle='#1a3005';ctx.fillRect(p.x-2,p.y,p.w+4,10);
+        for(let i=0;i<Math.floor(p.w/14);i++){ctx.fillStyle='#1a3005';ctx.fillRect(p.x+i*14,p.y-5,11,7);}
+        break;
+      case 'girder':
+        ctx.fillStyle='#383838';ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.strokeStyle='#484848';ctx.lineWidth=1;
+        for(let i=1;i<p.w/T;i++){ctx.beginPath();ctx.moveTo(p.x+i*T,p.y);ctx.lineTo(p.x+i*T,p.y+p.h);ctx.stroke();}
+        ctx.fillStyle='rgba(255,180,0,.07)';
+        for(let i=0;i<Math.floor(p.w/18);i+=2) ctx.fillRect(p.x+i*18,p.y,18,p.h);
+        break;
+      case 'tank':
+        ctx.fillStyle='#2a4050';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#3a5868';ctx.fillRect(p.x,p.y,p.w,6);
+        ctx.strokeStyle='#1a2830';ctx.lineWidth=2;ctx.strokeRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='rgba(200,80,0,.08)';ctx.fillRect(p.x,p.y,p.w,p.h);
+        break;
+      case 'pipe':
+        ctx.fillStyle='#4a4030';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#5a5040';ctx.fillRect(p.x,p.y,p.w,4);
+        // Pipe bolts
+        ctx.fillStyle='#333';
+        for(let i=0;i<Math.floor(p.w/20);i++) ctx.beginPath(),ctx.arc(p.x+i*20+10,p.y+2,2,0,Math.PI*2),ctx.fill();
+        ctx.strokeStyle='#3a3020';ctx.lineWidth=1;
+        for(let i=1;i<p.w/T;i++){ctx.beginPath();ctx.moveTo(p.x+i*T,p.y);ctx.lineTo(p.x+i*T,p.y+p.h);ctx.stroke();}
+        break;
+    }
+  }
+}
+
+// ── Ladders (drawn UNDER platforms) ──
+function drawLadders(){
+  for(const l of ladders){
+    const lx=l.cx-l.half;
+    // Shadow/depth
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(lx+8,l.y1,l.half*2-8,l.y2-l.y1);
+    // Left rail
+    ctx.strokeStyle='#8a5a18';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(lx+7,l.y1);ctx.lineTo(lx+7,l.y2);ctx.stroke();
+    // Right rail
+    ctx.beginPath();ctx.moveTo(lx+l.half*2-7,l.y1);ctx.lineTo(lx+l.half*2-7,l.y2);ctx.stroke();
+    // Rungs (every 12px)
+    ctx.strokeStyle='#cc9938';ctx.lineWidth=3;
+    for(let ry=l.y1+6;ry<l.y2;ry+=12){
+      ctx.beginPath();ctx.moveTo(lx+8,ry);ctx.lineTo(lx+l.half*2-8,ry);ctx.stroke();
+    }
+    // Cap ends
+    ctx.fillStyle='#ffbb44';
+    ctx.fillRect(lx+5,l.y1-2,l.half*2-10,4);
+    ctx.fillRect(lx+5,l.y2-2,l.half*2-10,4);
+  }
+}
+
+// ── Highlight nearest ladder when close ──
+function drawLadderNearby(){
+  const pcx=P.x+P.w/2,pcy=P.y+P.h/2;
+  for(const l of ladders){
+    const d=dist(pcx,pcy,l.cx,(l.y1+l.y2)*.5);
+    if(d<80){
+      const lx=l.cx-l.half;
+      ctx.save();ctx.globalAlpha=.35;
+      ctx.strokeStyle='#ffdd44';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+      ctx.strokeRect(lx+4,l.y1,l.half*2-8,l.y2-l.y1);
+      ctx.setLineDash([]);ctx.restore();
+      if(tog('tTips')&&!P.onLadder){
+        ctx.save();ctx.globalAlpha=.9;
+        ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(l.cx-28,l.y1-22,56,16);
+        ctx.fillStyle='#ffdd44';ctx.font='bold 10px Rajdhani';
+        ctx.textAlign='center';ctx.fillText('W/S: Climb',l.cx,l.y1-9);ctx.textAlign='left';
+        ctx.restore();
+      }
+    }
+  }
+  // On-ladder indicator
+  if(P.onLadder){
+    ctx.save();ctx.globalAlpha=.7;
+    ctx.fillStyle='rgba(255,200,50,.15)';ctx.fillRect(P.x-4,P.y-4,P.w+8,P.h+8);
+    ctx.restore();
+  }
+}
+
+// ── Hydrant / Truck ──
+function drawHydrant(h){
+  if(h.truck){
+    ctx.fillStyle='#cc2200';ctx.fillRect(h.x-32,h.y-22,64,22);
+    ctx.fillStyle='#aa1800';ctx.fillRect(h.x-32,h.y-28,38,8);
+    ctx.fillStyle='rgba(100,200,255,.35)';ctx.fillRect(h.x-30,h.y-26,14,6);ctx.fillRect(h.x-12,h.y-26,10,6);
+    ctx.fillStyle='#222';ctx.beginPath();ctx.arc(h.x-18,h.y+1,6,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(h.x+16,h.y+1,6,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffdd00';ctx.fillRect(h.x+30,h.y-18,4,10);
+  } else {
+    ctx.fillStyle='#aa1a00';ctx.fillRect(h.x-7,h.y-18,14,18);
+    ctx.fillStyle='#dd2a00';ctx.fillRect(h.x-10,h.y-22,20,6);
+    ctx.fillStyle='#ff5500';ctx.fillRect(h.x-5,h.y-26,10,4);
+    ctx.fillStyle='#cc2200';ctx.fillRect(h.x-4,h.y-9,8,5);
+  }
+  const d=dist(P.x+P.w/2,P.y+P.h/2,h.x,h.y);
+  if(d<72){
+    ctx.save();ctx.globalAlpha=.5;ctx.strokeStyle='#00aaff';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.arc(h.x,h.y-8,32,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    if(tog('tTips')){ctx.fillStyle='#44ccff';ctx.font='10px Rajdhani';ctx.fillText('[R] Refill',h.x-18,h.y-38);}
+  }
+}
+
+// ── Fire ──
+function drawFire(f){
+  const now=performance.now()/1000;
+  const fl=.87+Math.sin(now*9+f.x*.04)*.13;
+  const s=f.size*f.intensity*fl;if(s<2)return;
+  const og=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,s*2.6);
+  og.addColorStop(0,`rgba(255,110,0,${.22*f.intensity})`);og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.ellipse(f.x,f.y,s*2.6,s*1.5,0,0,Math.PI*2);ctx.fill();
+  const cg=ctx.createRadialGradient(f.x,f.y-s*.2,s*.07,f.x,f.y,s);
+  cg.addColorStop(0,'rgba(255,255,160,1)');cg.addColorStop(.25,'rgba(255,160,0,.95)');
+  cg.addColorStop(.65,'rgba(255,50,0,.75)');cg.addColorStop(1,'rgba(150,0,0,0)');
+  ctx.fillStyle=cg;ctx.beginPath();
+  for(let i=0;i<=10;i++){
+    const a=(i/10)*Math.PI*2,j=.7+Math.sin(now*7+i*1.5+f.x*.04)*.3;
+    const rx=Math.cos(a)*s*.82*j,ry=Math.sin(a)*s*(i%2===0?1.12:.72)*j;
+    i===0?ctx.moveTo(f.x+rx,f.y+ry):ctx.lineTo(f.x+rx,f.y+ry);
+  }
+  ctx.closePath();ctx.fill();
+  if(f.type!=='A'){
+    const bc=f.type==='B'?'rgba(255,120,0,.9)':'rgba(0,130,255,.9)';
+    ctx.fillStyle=bc;ctx.fillRect(f.x-9,f.y-s-15,18,13);
+    ctx.fillStyle='#fff';ctx.font='bold 10px Rajdhani';ctx.fillText(f.type,f.x-4,f.y-s-5);
+  }
+}
+
+// ── Civilian ──
+function drawCiv(c){
+  if(c.rescued)return;
+  const blink=c.state==='panicking'&&Math.floor(performance.now()/320)%2===0;
+  const near=dist(P.x+P.w/2,P.y+P.h/2,c.x+c.w/2,c.y+c.h/2)<65;
+  ctx.save();ctx.globalAlpha=blink?.6:1;
+  if(c.state==='unconscious'){
+    ctx.fillStyle='#776655';ctx.fillRect(c.x-6,c.y+c.h*.6,c.w+12,c.h*.4);
+    ctx.fillStyle='#f0c490';ctx.beginPath();ctx.arc(c.x+c.w+2,c.y+c.h*.6,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#aaa';ctx.font='10px Rajdhani';ctx.fillText('zzz',c.x,c.y-2);
+  } else {
+    ctx.fillStyle='#2255aa';ctx.fillRect(c.x+3,c.y+c.h*.38,c.w-6,c.h*.62);
+    ctx.fillStyle='#f0c490';ctx.beginPath();ctx.arc(c.x+c.w/2,c.y+c.h*.26,c.h*.18,0,Math.PI*2);ctx.fill();
+    // waving arm
+    const wa=Math.sin(performance.now()/180)*.45;
+    ctx.save();ctx.translate(c.x+c.w,c.y+c.h*.44);ctx.rotate(wa);
+    ctx.fillStyle='#f0c490';ctx.fillRect(0,-2,9,4);ctx.restore();
+  }
+  ctx.font='12px serif';ctx.fillText(c.state==='unconscious'?'💤':'❗',c.x-1,c.y-4);
+  if(near&&tog('tTips')){
+    ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(c.x-12,c.y-28,54,14);
+    ctx.fillStyle='#39ff14';ctx.font='10px Rajdhani';ctx.fillText('[E] Rescue',c.x-10,c.y-17);
+  }
+  ctx.restore();
+}
+
+// ── Player ──
+function drawPlayer(){
+  const px=P.x,py=P.y,h=P.crouching?P.h*.62:P.h;
+  const now=performance.now()/1000;
+  ctx.save();ctx.translate(px+P.w/2,py);
+  if(P.facing===-1)ctx.scale(-1,1);
+  if(P.inv>0&&Math.floor(now*10)%2===0)ctx.globalAlpha=.35;
+  const lo=P.onGround&&!P.onLadder?(Math.sin(now*11)*3*(Math.abs(P.vx)>.5?1:0)):0;
+  // Boots
+  ctx.fillStyle='#111';ctx.fillRect(-P.w/2+2,h*.95,7,5);ctx.fillRect(P.w/2-9,h*.95,7,5);
+  // Legs
+  ctx.fillStyle='#1a3a6a';
+  ctx.fillRect(-P.w/2+2,h*.54+lo,7,h*.42);ctx.fillRect(P.w/2-9,h*.54-lo,7,h*.42);
+  // Body
+  ctx.fillStyle='#c83c00';ctx.fillRect(-P.w/2+1,h*.26,P.w-2,h*.32);
+  // Reflective stripes
+  ctx.fillStyle='#ffdd00';ctx.fillRect(-P.w/2+1,h*.41,P.w-2,3);ctx.fillRect(-P.w/2+1,h*.34,P.w-2,2);
+  // Air tank
+  ctx.fillStyle='#22449a';ctx.fillRect(P.w/2-8,h*.26,7,h*.22);ctx.fillStyle='#3366cc';ctx.fillRect(P.w/2-7,h*.27,5,4);
+  // Head
+  ctx.fillStyle='#f0c490';ctx.beginPath();ctx.arc(0,h*.17,h*.14,0,Math.PI*2);ctx.fill();
+  // Helmet
+  ctx.fillStyle='#aa1e00';ctx.fillRect(-P.w/2+1,h*.04,P.w-2,h*.15);
+  ctx.fillStyle='#881600';ctx.fillRect(-P.w/2-2,h*.10,P.w+4,4);
+  // Visor
+  ctx.fillStyle='rgba(120,200,255,.32)';ctx.fillRect(-8,h*.12,16,5);
+  // Arm + hose (if not on ladder)
+  if(!P.onLadder){
+    const ha=P.sprayAngle*(P.facing===-1?-1:1);
+    ctx.save();ctx.translate(3,h*.33);ctx.rotate(ha);
+    ctx.fillStyle='#181818';ctx.fillRect(0,-3,22,6);
+    ctx.fillStyle='#003388';ctx.fillRect(20,-5,12,10);
+    ctx.fillStyle='#555';ctx.fillRect(32,-2,6,4);
+    ctx.restore();
+  } else {
+    // Both arms up on ladder
+    ctx.fillStyle='#c83c00';
+    ctx.fillRect(-P.w/2-4,h*.26,5,h*.2);
+    ctx.fillRect(P.w/2-1,h*.26,5,h*.2);
+  }
+  ctx.restore();
+}
+
+// ── Hose beam ──
+function drawHoseBeam(){
+  const sx=P.x+P.w/2+Math.cos(P.sprayAngle)*16,sy=P.y+P.h*.3+Math.sin(P.sprayAngle)*16;
+  const boost=boostHeld&&P.boost>5;
+  ctx.save();ctx.globalAlpha=boost?.68:.48;ctx.strokeStyle=boost?'#88ddff':'#44aaff';
+  ctx.lineWidth=boost?7:5;ctx.setLineDash([9,5]);ctx.lineDashOffset=-performance.now()/40;
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+Math.cos(P.sprayAngle)*100,sy+Math.sin(P.sprayAngle)*100);
+  ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+
+// ── Minimap ──
+function updateMinimap(){
+  if(!tog('tMM'))return;
+  mmX.clearRect(0,0,130,65);mmX.fillStyle='rgba(0,0,0,.82)';mmX.fillRect(0,0,130,65);
+  const sx=130/W,sy=65/H;
+  plats.forEach(p=>{
+    if(['ground','floor','porch','stair','roof','girder','pipe'].includes(p.type)){
+      mmX.fillStyle='#3a2005';mmX.fillRect(p.x*sx,p.y*sy,Math.max(1,p.w*sx),Math.max(1,p.h*sy));
+    }
+  });
+  ladders.forEach(l=>{mmX.fillStyle='#cc9930';mmX.fillRect((l.cx-l.half)*sx,l.y1*sy,l.half*2*sx,Math.max(2,(l.y2-l.y1)*sy));});
+  fires.forEach(f=>{if(f.alive){mmX.fillStyle='#ff3300';mmX.beginPath();mmX.arc(f.x*sx,f.y*sy,2.5,0,Math.PI*2);mmX.fill();}});
+  civs.forEach(c=>{if(!c.rescued){mmX.fillStyle='#00ff88';mmX.fillRect(c.x*sx,c.y*sy,3,3);}});
+  hydrants.forEach(h=>{mmX.fillStyle='#0088ff';mmX.beginPath();mmX.arc(h.x*sx,h.y*sy,2,0,Math.PI*2);mmX.fill();});
+  mmX.fillStyle='#ffff00';mmX.fillRect(P.x*sx-2,P.y*sy-2,5,5);
+  mmX.font='7px sans-serif';mmX.fillStyle='#ff3300';mmX.fillText('● F',2,9);
+  mmX.fillStyle='#00ff88';mmX.fillText('■ C',18,9);
+  mmX.fillStyle='#0088ff';mmX.fillText('● H',34,9);
+  mmX.fillStyle='#cc9930';mmX.fillText('| L',50,9);
+  mmX.fillStyle='#ffff00';mmX.fillText('■ U',66,9);
+}
+
+// ══════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════
+window.addEventListener('keydown',e=>{
+  K[e.key]=true;
+  if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();
+  if(e.key==='f'||e.key==='F')sprayHeld=true;
+  if((e.key==='Escape'||e.key==='p'||e.key==='P')&&(gst==='playing'||gst==='paused'))togglePause();
+});
+window.addEventListener('keyup',e=>{K[e.key]=false;if(e.key==='f'||e.key==='F')sprayHeld=false;});
+gc.addEventListener('mousemove',e=>{const r=gc.getBoundingClientRect();mX=(e.clientX-r.left)*(W/r.width);mY=(e.clientY-r.top)*(H/r.height);});
+gc.addEventListener('mousedown',e=>{if(e.button===0)sprayHeld=true;});
+gc.addEventListener('mouseup',e=>{if(e.button===0)sprayHeld=false;});
+gc.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ══════════════════════════════════════════
+//  BOOT — idle animation
+// ══════════════════════════════════════════
+(function boot(){
+  showScr('mainMenu');
+  function idle(ts){
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#090200';ctx.fillRect(0,0,W,H);
+    const now=ts/1000;
+    for(let i=0;i<7;i++){
+      const fx=70+i*125,fy=H-45+Math.sin(now*.9+i)*(H*.04);
+      const s=16+Math.sin(now*3+i*1.1)*6;
+      const g=ctx.createRadialGradient(fx,fy,0,fx,fy,s*2.4);
+      g.addColorStop(0,'rgba(255,210,60,.55)');g.addColorStop(.35,'rgba(255,80,0,.4)');g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(fx,fy,s*2.4,0,Math.PI*2);ctx.fill();
+    }
+    for(let i=0;i<14;i++){
+      const ex=((i*139+now*28)%W),ey=H-25-((i*83+now*22)%160);
+      ctx.fillStyle='rgba(255,130,30,.35)';ctx.beginPath();ctx.arc(ex,ey,1.5,0,Math.PI*2);ctx.fill();
+    }
+    requestAnimationFrame(idle);
+  }
+  requestAnimationFrame(idle);
+})();
+</script>
+</body>
+</html>
