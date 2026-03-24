@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLAZE RUNNER — Firefighter Action</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@400;600;700&display=swap');
+:root{--fire1:#ff4500;--fire2:#ff8c00;--fire3:#ffd700;--green:#39ff14;--red:#ff2222;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#090300;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif;overflow:hidden;color:#fff;}
+#gw{position:relative;width:900px;max-width:100vw;user-select:none;}
+canvas{display:block;width:900px;max-width:100vw;}
+#mm{position:absolute;top:6px;right:6px;width:120px;height:60px;border:1px solid #ff6a0066;z-index:8;pointer-events:none;background:rgba(0,0,0,.7);}
+/* HUD */
+#hud{display:flex;gap:8px;padding:6px 10px;background:rgba(0,0,0,.85);border:1px solid #ff6a00;border-top:none;flex-wrap:wrap;align-items:center;}
+.hb{display:flex;flex-direction:column;gap:2px;min-width:88px;}
+.hl{font-size:9px;letter-spacing:2px;color:#ff8844;text-transform:uppercase;}
+.bo{height:9px;background:#111;border:1px solid #333;overflow:hidden;}
+.bi{height:100%;transition:width .15s;}
+.bh{background:linear-gradient(90deg,#cc0000,#ff5555);}
+.bo2{background:linear-gradient(90deg,#006699,#00ccff);}
+.bw{background:linear-gradient(90deg,#003388,#00aaff);}
+#hudScore{margin-left:auto;font-family:'Black Ops One',cursive;font-size:20px;color:var(--fire3);text-shadow:0 0 8px #ffd70055;}
+#hudLvl{font-size:11px;color:#aaa;letter-spacing:.5px;}
+#hudTimer{font-family:'Black Ops One',cursive;font-size:18px;color:#ff5555;}
+#hudTimer.urgent{animation:pulsered .45s infinite alternate;}
+@keyframes pulsered{from{color:#ff4444}to{color:#ffaaaa}}
+#hudObj{font-size:13px;color:#ffaa66;}
+#pauseBtn{padding:3px 12px;background:transparent;border:1px solid #ff6a0077;color:#ff8844;font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:1px;cursor:pointer;}
+#pauseBtn:hover{background:#ff450022;}
+/* SCREENS */
+.screen{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#150500,#3a1000,#0a0000);border:2px solid var(--fire1);box-shadow:0 0 50px #ff450033;}
+.screen.hidden{display:none;}
+.stitle{font-family:'Black Ops One',cursive;font-size:56px;color:var(--fire2);text-shadow:0 0 18px var(--fire1),0 0 35px #ff000055;letter-spacing:4px;animation:flicker 2s infinite;}
+.ssub{color:#ff9944;font-size:17px;margin-top:6px;letter-spacing:2px;}
+@keyframes flicker{0%,100%{opacity:1}48%{opacity:.87}75%{text-shadow:0 0 8px var(--fire1);}}
+.mlist{display:flex;flex-direction:column;gap:10px;margin-top:26px;align-items:center;}
+.mbtn{padding:11px 44px;background:linear-gradient(135deg,#ff4500,#ff8c00);border:none;color:#000;font-family:'Black Ops One',cursive;font-size:18px;letter-spacing:2px;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:transform .13s,box-shadow .13s;box-shadow:0 3px 16px #ff450077;min-width:210px;}
+.mbtn:hover{transform:scale(1.05);box-shadow:0 5px 24px #ff4500bb;}
+.mbtn.sec{background:linear-gradient(135deg,#2a1500,#4a2a00);color:#ffaa44;box-shadow:0 2px 8px #1a080033;}
+.mbtn.sec:hover{background:linear-gradient(135deg,#442200,#773300);}
+.mbtn.dng{background:linear-gradient(135deg,#1a0000,#3a0000);color:#ff6666;}
+.mbtn.dng:hover{background:linear-gradient(135deg,#330000,#550000);}
+.divider{width:220px;height:1px;background:linear-gradient(90deg,transparent,#ff450055,transparent);margin:16px 0;}
+/* level cards */
+.lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
+.lcard{padding:14px 16px;background:#1a0800;border:1px solid #ff450044;cursor:pointer;transition:all .15s;text-align:center;}
+.lcard:hover{border-color:var(--fire2);background:#2a1200;box-shadow:0 0 14px #ff450033;}
+.lcard .lnum{font-family:'Black Ops One',cursive;font-size:24px;color:var(--fire2);}
+.lcard .lname{font-size:13px;color:#ffaa66;margin-top:2px;}
+.lcard .ldesc{font-size:11px;color:#777;margin-top:4px;}
+.lcard .lstar{font-size:15px;margin-top:5px;}
+/* settings */
+.srow{display:flex;align-items:center;gap:14px;margin-top:12px;font-size:15px;color:#ffaa66;}
+.srow span{width:170px;}
+.tog{width:46px;height:22px;background:#220000;border:1px solid #ff450055;border-radius:11px;cursor:pointer;position:relative;transition:background .2s;}
+.tog.on{background:#cc3300;}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;}
+.tog.on::after{left:25px;}
+input[type=range]{-webkit-appearance:none;width:100px;height:4px;background:#331100;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--fire2);border-radius:50%;cursor:pointer;}
+/* how to play */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px;margin-top:14px;}
+.crow{font-size:14px;color:#ffaa66;}
+.ck{display:inline-block;background:#1a0800;border:1px solid #ff6a0055;padding:1px 7px;border-radius:3px;font-family:'Black Ops One',cursive;font-size:11px;color:#ff8844;margin-right:3px;}
+/* pause */
+#pScreen{position:absolute;inset:0;z-index:40;display:none;background:rgba(0,0,0,.8);align-items:center;justify-content:center;flex-direction:column;}
+#pScreen.show{display:flex;}
+/* level complete */
+#lcScreen{position:absolute;inset:0;z-index:44;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.88);}
+#lcScreen.show{display:flex;}
+/* result */
+#rScreen{position:absolute;inset:0;z-index:45;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.9);}
+#rScreen.show{display:flex;}
+.rbox{border:2px solid;padding:26px 38px;text-align:center;background:#0a0000;max-width:480px;}
+.rbox.win{border-color:var(--green);}
+.rbox.lose{border-color:var(--red);}
+.rtitle{font-family:'Black Ops One',cursive;font-size:38px;}
+.rtitle.win{color:var(--green);text-shadow:0 0 16px var(--green);}
+.rtitle.lose{color:var(--red);text-shadow:0 0 16px var(--red);}
+.rstats{margin-top:12px;font-size:15px;color:#ccc;line-height:2.1;}
+.rv{color:var(--fire3);font-family:'Black Ops One',cursive;}
+.rbtns{display:flex;gap:10px;justify-content:center;margin-top:18px;}
+/* toast */
+#toast{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.88);border:1px solid #ff6a0077;padding:5px 18px;font-size:13px;color:#ffaa44;letter-spacing:1px;pointer-events:none;z-index:60;opacity:0;transition:opacity .3s;white-space:nowrap;}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="gw">
+<canvas id="gc" width="900" height="480"></canvas>
+<canvas id="mm"></canvas>
+
+<div id="hud">
+  <div class="hb"><div class="hl">❤ Health</div><div class="bo" style="width:100px"><div class="bi bh" id="bH" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">💨 Oxygen</div><div class="bo" style="width:100px"><div class="bi bo2" id="bO" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">💧 Water</div><div class="bo" style="width:100px"><div class="bi bw" id="bW" style="width:100%"></div></div></div>
+  <div class="hb"><div class="hl">⏱ Time</div><div id="hudTimer">—</div></div>
+  <div class="hb"><div class="hl">Mission</div><div id="hudLvl">—</div></div>
+  <div class="hb"><div class="hl">Remaining</div><div id="hudObj">—</div></div>
+  <div id="hudScore">0</div>
+  <button id="pauseBtn" onclick="togglePause()">⏸</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- MAIN MENU -->
+<div class="screen" id="mainMenu">
+  <div class="stitle">🔥 BLAZE RUNNER</div>
+  <div class="ssub">FIREFIGHTER EMERGENCY RESPONSE</div>
+  <div class="mlist">
+    <button class="mbtn" onclick="showScreen('levelSelect')">▶ NEW GAME</button>
+    <button class="mbtn sec" onclick="showScreen('howToPlay')">📖 HOW TO PLAY</button>
+    <button class="mbtn sec" onclick="showScreen('settings')">⚙ SETTINGS</button>
+  </div>
+  <div class="divider"></div>
+  <div style="color:#444;font-size:11px;letter-spacing:1px;">BLAZE RUNNER v2.1</div>
+</div>
+
+<!-- LEVEL SELECT -->
+<div class="screen hidden" id="levelSelect">
+  <div class="stitle" style="font-size:34px;animation:none;">SELECT MISSION</div>
+  <div class="lgrid">
+    <div class="lcard" onclick="startLevel(0)">
+      <div class="lnum">01</div>
+      <div class="lname">🏠 House Fire</div>
+      <div class="ldesc">Rescue the family trapped inside</div>
+      <div class="lstar">⭐⭐ NORMAL</div>
+    </div>
+    <div class="lcard" onclick="startLevel(1)">
+      <div class="lnum">02</div>
+      <div class="lname">🌲 Forest Fire</div>
+      <div class="ldesc">Wildfire spreading with strong wind</div>
+      <div class="lstar">⭐⭐⭐ HARD</div>
+    </div>
+    <div class="lcard" onclick="startLevel(2)">
+      <div class="lnum">03</div>
+      <div class="lname">🏭 Industrial</div>
+      <div class="ldesc">Chemical plant — Class B &amp; C fires</div>
+      <div class="lstar">⭐⭐⭐⭐ EXTREME</div>
+    </div>
+  </div>
+  <div class="mlist" style="flex-direction:row;margin-top:20px;">
+    <button class="mbtn sec" onclick="showScreen('mainMenu')">◀ BACK</button>
+  </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div class="screen hidden" id="howToPlay">
+  <div class="stitle" style="font-size:32px;animation:none;">HOW TO PLAY</div>
+  <div class="cgrid">
+    <div class="crow"><span class="ck">A</span><span class="ck">D</span> Move left / right</div>
+    <div class="crow"><span class="ck">W</span><span class="ck">Space</span> Jump</div>
+    <div class="crow"><span class="ck">S</span> Crouch</div>
+    <div class="crow"><span class="ck">Mouse</span> Aim hose direction</div>
+    <div class="crow"><span class="ck">LMB</span><span class="ck">F</span> Spray water</div>
+    <div class="crow"><span class="ck">E</span> Rescue civilian nearby</div>
+    <div class="crow"><span class="ck">R</span> Refill at hydrant</div>
+    <div class="crow"><span class="ck">Esc</span><span class="ck">P</span> Pause game</div>
+  </div>
+  <div class="divider"></div>
+  <div style="font-size:13px;color:#ff9944;text-align:center;line-height:2;max-width:430px;">
+    🔴 <b>Class A</b> — Ordinary (water works fine)<br>
+    🟠 <b>Class B</b> — Flammable liquid (aim at base)<br>
+    🔵 <b>Class C</b> — Electrical (use short precise bursts)<br>
+    💧 Refill at <b style="color:#cc2200">red hydrants</b> — watch your oxygen near smoke!
+  </div>
+  <button class="mbtn sec" style="margin-top:18px;" onclick="showScreen('mainMenu')">◀ BACK</button>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen hidden" id="settings">
+  <div class="stitle" style="font-size:32px;animation:none;">SETTINGS</div>
+  <div style="display:flex;flex-direction:column;">
+    <div class="srow"><span>Fire Spread Speed</span>
+      <span style="font-size:11px;color:#666;">Slow</span>
+      <input type="range" id="sSpread" min="1" max="3" value="2">
+      <span style="font-size:11px;color:#666;">Fast</span>
+    </div>
+    <div class="srow"><span>Fire Damage Rate</span>
+      <span style="font-size:11px;color:#666;">Low</span>
+      <input type="range" id="sDamage" min="1" max="3" value="2">
+      <span style="font-size:11px;color:#666;">High</span>
+    </div>
+    <div class="srow"><span>Show Minimap</span>
+      <div class="tog on" id="togMM" onclick="this.classList.toggle('on');mmEl.style.display=this.classList.contains('on')?'block':'none'"></div>
+    </div>
+    <div class="srow"><span>Context Tooltips</span>
+      <div class="tog on" id="togTips" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+  <button class="mbtn sec" style="margin-top:26px;" onclick="showScreen('mainMenu')">◀ BACK</button>
+</div>
+
+<!-- PAUSE -->
+<div id="pScreen">
+  <div style="font-family:'Black Ops One',cursive;font-size:38px;color:var(--fire2);margin-bottom:18px;text-shadow:0 0 12px var(--fire1);">⏸ PAUSED</div>
+  <div class="mlist">
+    <button class="mbtn" onclick="togglePause()">▶ RESUME</button>
+    <button class="mbtn sec" onclick="restartLevel()">↺ RESTART LEVEL</button>
+    <button class="mbtn sec" onclick="openHowTo()">📖 CONTROLS</button>
+    <button class="mbtn dng" onclick="quitMenu()">✖ QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div id="lcScreen">
+  <div class="rbox win">
+    <div class="rtitle win">✅ MISSION CLEAR!</div>
+    <div class="rstats" id="lcStats"></div>
+    <div class="rbtns" id="lcBtns"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="rScreen">
+  <div class="rbox" id="rBox">
+    <div class="rtitle" id="rTitle"></div>
+    <div class="rstats" id="rStats"></div>
+    <div class="rbtns" id="rBtns"></div>
+  </div>
+</div>
+
+</div><!-- #gw -->
+<script>
+// ══════════════════════════════════
+//  SETUP
+// ══════════════════════════════════
+const gc=document.getElementById('gc');
+const ctx=gc.getContext('2d');
+const W=900,H=480,TILE=32;
+gc.width=W;gc.height=H;
+const mmEl=document.getElementById('mm');
+const mmX=mmEl.getContext('2d');
+mmEl.width=120;mmEl.height=60;
+
+function getSetting(id,def){const e=document.getElementById(id);return e?parseInt(e.value):def;}
+function togOn(id){const e=document.getElementById(id);return e?e.classList.contains('on'):true;}
+
+// ══════════════════════════════════
+//  LEVELS
+// ══════════════════════════════════
+const LEVELS=[
+  {name:"Mission 1 — House Fire",    time:110,fireCount:4,civCount:2,bg:0,wind:{x:.15,y:0},  desc:"Save the family trapped in the burning house!"},
+  {name:"Mission 2 — Forest Fire",   time:85, fireCount:6,civCount:3,bg:1,wind:{x:.38,y:.05},desc:"Wildfire spreading fast — evacuate the campers!"},
+  {name:"Mission 3 — Industrial",    time:70, fireCount:8,civCount:4,bg:2,wind:{x:-.22,y:0}, desc:"Chemical plant ablaze — B & C class fires present!"}
+];
+
+// ══════════════════════════════════
+//  STATE
+// ══════════════════════════════════
+let gstate='menu',paused=false;
+let score=0,lvlScore=0,firesSaved=0,civsRescued=0;
+let currentLevel=0;
+let afr=null,lastTime=0,dt=0;
+let tAcc=0,fAcc=0,timer=90;
+let ld; // levelData
+let platforms=[],hydrants=[],fires=[],civilians=[],drops=[],smoke=[],floats=[];
+let sprayHeld=false,mouseX=W/2,mouseY=H/2;
+const keys={};
+const GRAVITY=.52,JUMP=-11.5,SPEED=3.4;
+const P={x:80,y:H-TILE*5,w:22,h:36,vx:0,vy:0,onGround:false,facing:1,health:100,oxygen:100,water:100,crouching:false,sprayAngle:0,spraying:false};
+
+// ══════════════════════════════════
+//  SCREEN MANAGEMENT
+// ══════════════════════════════════
+const MENU_IDS=['mainMenu','levelSelect','howToPlay','settings'];
+function showScreen(id){
+  MENU_IDS.forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));
+}
+function togglePause(){
+  if(gstate==='playing'){
+    gstate='paused';paused=true;
+    document.getElementById('pScreen').classList.add('show');
+  } else if(gstate==='paused'){
+    gstate='playing';paused=false;
+    document.getElementById('pScreen').classList.remove('show');
+    lastTime=performance.now();
+  }
+}
+function quitMenu(){
+  gstate='menu';paused=false;
+  document.getElementById('pScreen').classList.remove('show');
+  document.getElementById('lcScreen').classList.remove('show');
+  document.getElementById('rScreen').classList.remove('show');
+  showScreen('mainMenu');
+}
+function restartLevel(){
+  document.getElementById('pScreen').classList.remove('show');
+  startLevel(currentLevel);
+}
+function openHowTo(){
+  document.getElementById('pScreen').classList.remove('show');
+  quitMenu();
+  showScreen('howToPlay');
+}
+function toast(msg,dur=2400){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ══════════════════════════════════
+//  TERRAIN BUILDER
+// ══════════════════════════════════
+function startLevel(idx){
+  currentLevel=idx;
+  ld=LEVELS[idx];
+  if(idx===0) score=0;
+  lvlScore=0;firesSaved=0;civsRescued=0;
+  timer=ld.time;tAcc=0;fAcc=0;
+  Object.assign(P,{x:80,y:H-TILE*5,vx:0,vy:0,onGround:false,facing:1,health:100,oxygen:100,water:100,crouching:false,sprayAngle:0,spraying:false});
+  platforms=[];hydrants=[];fires=[];civilians=[];drops=[];smoke=[];floats=[];
+  buildLevel(idx);
+  spawnEntities(idx);
+  document.getElementById('hudLvl').textContent=ld.name;
+  MENU_IDS.forEach(s=>document.getElementById(s).classList.add('hidden'));
+  document.getElementById('pScreen').classList.remove('show');
+  document.getElementById('lcScreen').classList.remove('show');
+  document.getElementById('rScreen').classList.remove('show');
+  gstate='playing';paused=false;
+  if(!afr){lastTime=performance.now();afr=requestAnimationFrame(loop);}
+  toast('🚨 '+ld.desc,3500);
+}
+
+function ap(x,y,w,h,t){platforms.push({x,y,w,h,type:t});}
+
+function buildLevel(idx){
+  // Full ground row
+  for(let c=0;c<28;c++) ap(c*TILE,H-TILE,TILE,TILE,'ground');
+
+  if(idx===0){ // ── HOUSE FIRE ──
+    // Left outdoor stairs — wide 3-step staircase (each step 2 tiles wide, 1 tile tall)
+    ap(0,        H-TILE*2, TILE*3, TILE,'floor'); // step 1
+    ap(2*TILE,   H-TILE*3, TILE*3, TILE,'floor'); // step 2
+    ap(4*TILE,   H-TILE*4, TILE*3, TILE,'floor'); // step 3
+    ap(5*TILE,   H-TILE*5, TILE*3, TILE,'floor'); // step 4 leads to house door
+
+    // House interior floor (ground level)
+    ap(7*TILE,   H-TILE*5, TILE*8, TILE,'floor'); // house floor 1
+    // House walls
+    for(let r=1;r<5;r++) ap(7*TILE, H-TILE*(5+r), TILE,TILE,'wall');
+    for(let r=1;r<5;r++) ap(14*TILE,H-TILE*(5+r), TILE,TILE,'wall');
+    // House second floor
+    ap(7*TILE,   H-TILE*9, TILE*8, TILE,'floor'); // house floor 2
+    // Interior steps connecting house floors
+    ap(8*TILE,   H-TILE*6, TILE*2, TILE,'floor');
+    ap(10*TILE,  H-TILE*7, TILE*2, TILE,'floor');
+    ap(12*TILE,  H-TILE*8, TILE*2, TILE,'floor');
+    // Roof ledge
+    ap(8*TILE,   H-TILE*11,TILE*5, TILE,'floor');
+
+    // Right outdoor area — descending stairs from roof level
+    ap(16*TILE,  H-TILE*9, TILE*3, TILE,'floor');
+    ap(18*TILE,  H-TILE*7, TILE*3, TILE,'floor');
+    ap(20*TILE,  H-TILE*5, TILE*3, TILE,'floor');
+    ap(22*TILE,  H-TILE*3, TILE*3, TILE,'floor');
+    // Far right flat
+    ap(24*TILE,  H-TILE*2, TILE*4, TILE,'floor');
+
+    // Hydrants (accessible from ground and step 1)
+    hydrants.push({x:1.5*TILE, y:H-TILE*3, r:14});
+    hydrants.push({x:26*TILE,  y:H-TILE*3, r:14});
+  }
+
+  else if(idx===1){ // ── FOREST FIRE ──
+    // Gently rising terrain — each platform 1 tile higher, 3-4 tiles wide, connected
+    ap(0,         H-TILE*2, TILE*4, TILE,'tree');
+    ap(3*TILE,    H-TILE*3, TILE*4, TILE,'tree');
+    ap(6*TILE,    H-TILE*4, TILE*4, TILE,'tree');
+    ap(9*TILE,    H-TILE*5, TILE*4, TILE,'tree');
+    ap(12*TILE,   H-TILE*6, TILE*4, TILE,'tree');
+    ap(15*TILE,   H-TILE*5, TILE*4, TILE,'tree');
+    ap(18*TILE,   H-TILE*4, TILE*4, TILE,'tree');
+    ap(21*TILE,   H-TILE*3, TILE*4, TILE,'tree');
+    ap(24*TILE,   H-TILE*2, TILE*4, TILE,'tree');
+    // Cliff ledge top — only 1 jump away from step below
+    ap(10*TILE,   H-TILE*8, TILE*5, TILE,'floor');
+    ap(13*TILE,   H-TILE*10,TILE*4, TILE,'floor');
+    // Bridges (stepping stones between tree platforms)
+    ap(4*TILE,    H-TILE*3, TILE,   TILE,'floor');  // bridge joins step 1→2
+    ap(7*TILE,    H-TILE*4, TILE,   TILE,'floor');
+    ap(10*TILE,   H-TILE*5, TILE,   TILE,'floor');
+
+    hydrants.push({x:1.5*TILE, y:H-TILE*3, r:14});
+    hydrants.push({x:23*TILE,  y:H-TILE*3, r:14});
+  }
+
+  else { // ── INDUSTRIAL ──
+    // Lower catwalks left side (accessible 2-tile steps)
+    ap(0,          H-TILE*2, TILE*4, TILE,'floor');
+    ap(2*TILE,     H-TILE*4, TILE*4, TILE,'girder');
+    ap(4*TILE,     H-TILE*6, TILE*4, TILE,'girder');
+    ap(6*TILE,     H-TILE*8, TILE*4, TILE,'girder');
+    // Top level catwalk
+    ap(8*TILE,     H-TILE*10,TILE*12,TILE,'girder');
+    // Lower catwalks right side (mirror)
+    ap(20*TILE,    H-TILE*8, TILE*4, TILE,'girder');
+    ap(22*TILE,    H-TILE*6, TILE*4, TILE,'girder');
+    ap(24*TILE,    H-TILE*4, TILE*4, TILE,'girder');
+    ap(24*TILE,    H-TILE*2, TILE*4, TILE,'floor');
+    // Ground level platforms (mid)
+    ap(8*TILE,     H-TILE*2, TILE*3, TILE,'floor');
+    ap(17*TILE,    H-TILE*2, TILE*3, TILE,'floor');
+    // Storage tanks (wide low obstacles to jump over)
+    ap(11*TILE,    H-TILE*3, TILE*2, TILE*2,'tank');
+    ap(15*TILE,    H-TILE*3, TILE*2, TILE*2,'tank');
+    // Mid shelves on top catwalk
+    ap(9*TILE,     H-TILE*12,TILE*3, TILE,'girder');
+    ap(16*TILE,    H-TILE*12,TILE*3, TILE,'girder');
+
+    hydrants.push({x:1.5*TILE,  y:H-TILE*3,  r:14});
+    hydrants.push({x:13.5*TILE, y:H-TILE*11, r:14});
+    hydrants.push({x:26*TILE,   y:H-TILE*3,  r:14});
+  }
+}
+
+function getGroundY(x){
+  let minY=H-TILE;
+  for(const p of platforms){
+    if(p.type==='wall'||p.type==='tank') continue;
+    if(x>=p.x&&x<=p.x+p.w&&p.y<minY) minY=p.y;
+  }
+  return minY;
+}
+function rand(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+
+function spawnEntities(idx){
+  const fireCols=[[9,10,11,12,13,14],[5,7,10,12,15,18,21],[7,9,11,14,16,18,20,22]];
+  const civCols= [[10,12,19,21],       [8,11,14,17,20],      [9,12,15,18,21,24]];
+  const fc=fireCols[idx];
+  for(let i=0;i<ld.fireCount;i++){
+    const c=fc[i%fc.length];
+    const gy=getGroundY(c*TILE+16)-2;
+    fires.push({x:c*TILE+rand(-8,8),y:gy,size:16+rand(3,12),intensity:.6+Math.random()*.35,
+      type:['A','A','A','B','C'][Math.floor(Math.random()*5)],age:0,alive:true});
+  }
+  const cc=civCols[idx];
+  for(let i=0;i<ld.civCount;i++){
+    const c=cc[i%cc.length];
+    const gy=getGroundY(c*TILE+8)-28;
+    civilians.push({x:c*TILE,y:gy,w:16,h:28,state:Math.random()<.3?'unconscious':'panicking',rescued:false,vx:(Math.random()<.5?-.5:.5),timer:0});
+  }
+}
+
+// ══════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════
+function loop(ts){
+  dt=Math.min((ts-lastTime)/1000,.05);lastTime=ts;
+  if(gstate==='playing') update();
+  render();
+  afr=requestAnimationFrame(loop);
+}
+
+// ══════════════════════════════════
+//  UPDATE
+// ══════════════════════════════════
+function update(){
+  const dmg=[.5,1,1.5][getSetting('sDamage',2)-1];
+  const spr=[.5,1,2][getSetting('sSpread',2)-1];
+
+  // Timer
+  tAcc+=dt;if(tAcc>=1){tAcc-=1;timer=Math.max(0,timer-1);}
+
+  // Input
+  const mvL=keys['a']||keys['ArrowLeft'];
+  const mvR=keys['d']||keys['ArrowRight'];
+  P.crouching=!!(keys['s']||keys['ArrowDown']);
+  if(mvL)P.vx=-SPEED; else if(mvR)P.vx=SPEED; else P.vx*=.72;
+  if((keys['w']||keys['ArrowUp']||keys[' '])&&P.onGround){P.vy=JUMP;P.onGround=false;}
+  P.vy+=GRAVITY; P.x+=P.vx; P.y+=P.vy;
+
+  // Collisions
+  P.onGround=false;
+  for(const p of platforms) collide(p);
+  P.x=Math.max(0,Math.min(W-P.w,P.x));
+  if(P.y>H){P.y=H-P.h;P.vy=0;P.onGround=true;}
+
+  // Aim
+  const cx=P.x+P.w/2,cy=P.y+P.h/2;
+  P.sprayAngle=Math.atan2(mouseY-cy,mouseX-cx);
+  P.facing=mouseX>cx?1:-1;
+
+  // Spray
+  if(sprayHeld&&P.water>0){P.spraying=true;P.water=Math.max(0,P.water-28*dt);spawnDrops();}
+  else P.spraying=false;
+
+  updateDrops();
+  updateFires(spr);
+  updateCivs();
+  updateSmoke();
+
+  // Oxygen & health
+  const nf=fires.some(f=>f.alive&&dist(f.x,f.y,cx,cy)<130);
+  if(nf)P.oxygen=Math.max(0,P.oxygen-7*dt*dmg); else P.oxygen=Math.min(100,P.oxygen+5*dt);
+  if(nf)P.health=Math.max(0,P.health-3.5*dt*dmg);
+  if(P.oxygen<15)P.health=Math.max(0,P.health-4*dt*dmg);
+
+  if(keys['e']||keys['E'])tryRescue();
+  if(keys['r']||keys['R'])tryRefill();
+
+  // HUD
+  document.getElementById('bH').style.width=P.health+'%';
+  document.getElementById('bO').style.width=P.oxygen+'%';
+  document.getElementById('bW').style.width=P.water+'%';
+  document.getElementById('hudScore').textContent=score;
+  const te=document.getElementById('hudTimer');te.textContent=timer;te.className='hud-timer'+(timer<=15?' urgent':'');
+  const af2=fires.filter(f=>f.alive).length,ac=civilians.filter(c=>!c.rescued).length;
+  document.getElementById('hudObj').textContent='🔥'+af2+'  👤'+ac;
+
+  updateMinimap();
+
+  // End conditions
+  if(P.health<=0)endLevel('lose','You were overcome by the flames.');
+  else if(timer<=0)endLevel('lose','Time ran out!');
+  else if(af2===0&&ac===0){
+    const bonus=timer*8;score+=bonus;lvlScore+=bonus;
+    showLevelComplete(bonus);
+  }
+}
+
+function collide(p){
+  if(p.type==='wall') return;
+  const ph=P.crouching?P.h*.62:P.h;
+  const px2=P.x+P.w,py2=P.y+ph,bx2=p.x+p.w,by2=p.y+p.h;
+  if(px2<=p.x||P.x>=bx2||py2<=p.y||P.y>=by2) return;
+  const ol=px2-p.x,or2=bx2-P.x,ot=py2-p.y,ob=by2-P.y,m=Math.min(ol,or2,ot,ob);
+  if(m===ot&&P.vy>=0){P.y=p.y-ph;P.vy=0;P.onGround=true;}
+  else if(m===ob&&P.vy<0){P.y=by2;P.vy=1;}
+  else if(m===ol){P.x=p.x-P.w;P.vx=0;}
+  else if(m===or2){P.x=bx2;P.vx=0;}
+}
+
+function spawnDrops(){
+  const a=P.sprayAngle;
+  for(let i=0;i<3;i++){
+    const sp=(Math.random()-.5)*.28;
+    drops.push({x:P.x+P.w/2+Math.cos(a)*12,y:P.y+P.h*.32+Math.sin(a)*12,
+      vx:Math.cos(a+sp)*9.5+P.vx*.25,vy:Math.sin(a+sp)*9.5,life:1,r:3});
+  }
+}
+function updateDrops(){
+  for(const d of drops){
+    d.x+=d.vx;d.y+=d.vy;d.vy+=.3;d.life-=1.4*dt;
+    for(const f of fires){
+      if(!f.alive) continue;
+      if(dist(d.x,d.y,f.x,f.y)<f.size+10){
+        f.intensity-=.12;f.size-=1.2;d.life=0;
+        spawnSteam(f.x,f.y);
+        if(f.intensity<=0||f.size<3){
+          f.alive=false;const pts=150*(currentLevel+1);score+=pts;lvlScore+=pts;firesSaved++;
+          addFloat(f.x,f.y,'🔥 +'+pts,'#ffd700');
+        }
+      }
+    }
+  }
+  drops=drops.filter(d=>d.life>0&&d.y<H+10);
+}
+function spawnSteam(x,y){
+  for(let i=0;i<5;i++) smoke.push({x:x+rand(-4,4),y,vx:(Math.random()-.5)*1.3,vy:-1.5-Math.random(),alpha:.45,r:7,life:1,steam:true});
+}
+function updateFires(mult){
+  fAcc+=dt;
+  for(const f of fires){
+    if(!f.alive) continue;
+    f.age+=dt;
+    if(f.age<18) f.intensity=Math.min(1,f.intensity+.018*dt);
+    if(Math.random()<.35) smoke.push({x:f.x+rand(-8,8),y:f.y-f.size*.4,
+      vx:(Math.random()-.5)*.6+ld.wind.x*.8,vy:-.9-Math.random()*.5,
+      alpha:.5+Math.random()*.22,r:10+Math.random()*13,life:1,steam:false});
+  }
+  if(fAcc>3.5/mult){
+    fAcc=0;
+    fires.filter(f=>f.alive).forEach(f=>{
+      if(Math.random()<.18*f.intensity&&fires.length<25){
+        const ang=Math.random()*Math.PI*2,sd=34+rand(0,24);
+        const nx=f.x+Math.cos(ang)*sd+ld.wind.x*16,ny=f.y+Math.sin(ang)*sd;
+        if(nx>10&&nx<W-10) fires.push({x:nx,y:ny,size:9,intensity:.33,type:f.type,age:0,alive:true});
+      }
+    });
+  }
+}
+function updateSmoke(){
+  for(const s of smoke){s.x+=s.vx+ld.wind.x*.35;s.y+=s.vy;s.alpha-=.55*dt;s.r+=2.5*dt;s.life-=.55*dt;}
+  smoke=smoke.filter(s=>s.life>0);
+}
+function updateCivs(){
+  for(const c of civilians){
+    if(c.rescued) continue;
+    c.timer+=dt;
+    if(c.state==='panicking'&&c.timer>1.8){c.timer=0;c.vx=(Math.random()-.5)*1.8;}
+    if(c.state==='panicking'){c.x+=c.vx;c.x=Math.max(0,Math.min(W-c.w,c.x));}
+    const gy=getGroundY(c.x+c.w/2)-c.h;
+    if(c.y<gy)c.y+=4;else c.y=gy;
+  }
+}
+function tryRescue(){
+  const cx=P.x+P.w/2,cy=P.y+P.h/2;
+  for(const c of civilians){
+    if(c.rescued||dist(cx,cy,c.x+c.w/2,c.y+c.h/2)>58) continue;
+    c.rescued=true;const pts=250*(currentLevel+1);score+=pts;lvlScore+=pts;civsRescued++;
+    addFloat(c.x,c.y,'👤 SAVED +'+pts,'#39ff14');toast('✅ Civilian rescued!');
+  }
+}
+function tryRefill(){
+  const cx=P.x+P.w/2,cy=P.y+P.h/2;
+  for(const h of hydrants){
+    if(dist(cx,cy,h.x,h.y)<60){P.water=Math.min(100,P.water+65*dt);}
+  }
+}
+function addFloat(x,y,text,color){floats.push({x,y,text,color,life:2,vy:-1.3});}
+function dist(x1,y1,x2,y2){return Math.hypot(x2-x1,y2-y1);}
+
+// ══════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════
+function showLevelComplete(bonus){
+  if(gstate==='levelcomplete'||gstate==='result') return;
+  gstate='levelcomplete';
+  const stars=P.health>70?'⭐⭐⭐':P.health>40?'⭐⭐':'⭐';
+  document.getElementById('lcStats').innerHTML=`
+    <div>Fires Extinguished: <span class="rv">${firesSaved}</span></div>
+    <div>Civilians Rescued: <span class="rv">${civsRescued} / ${ld.civCount}</span></div>
+    <div>Time Bonus: <span class="rv">+${bonus}</span></div>
+    <div>Level Score: <span class="rv">${lvlScore}</span></div>
+    <div>Total Score: <span class="rv">${score}</span></div>
+    <div style="font-size:20px;margin-top:4px;">${stars}</div>`;
+  const isLast=currentLevel>=LEVELS.length-1;
+  document.getElementById('lcBtns').innerHTML=isLast
+    ?`<button class="mbtn" onclick="showFinalResult()">🏆 FINAL RESULTS</button>`
+    :`<button class="mbtn" onclick="startLevel(${currentLevel+1})">▶ NEXT MISSION</button>
+      <button class="mbtn sec" onclick="quitMenu()">MENU</button>`;
+  document.getElementById('lcScreen').classList.add('show');
+}
+function showFinalResult(){
+  document.getElementById('lcScreen').classList.remove('show');
+  gstate='result';
+  document.getElementById('rBox').className='rbox win';
+  document.getElementById('rTitle').className='rtitle win';
+  document.getElementById('rTitle').textContent='🏆 ALL MISSIONS COMPLETE!';
+  document.getElementById('rStats').innerHTML=`
+    <div style="color:#ffd700;font-size:16px;margin-bottom:8px;">You saved the city, hero!</div>
+    <div>Final Score: <span class="rv">${score}</span></div>
+    <div style="font-size:22px;margin-top:6px;">⭐⭐⭐</div>`;
+  document.getElementById('rBtns').innerHTML=`<button class="mbtn" onclick="quitMenu()">🏠 MAIN MENU</button>`;
+  document.getElementById('rScreen').classList.add('show');
+}
+function endLevel(result,reason){
+  if(gstate==='levelcomplete'||gstate==='result') return;
+  gstate='result';
+  document.getElementById('rBox').className='rbox '+(result==='lose'?'lose':'win');
+  document.getElementById('rTitle').className='rtitle '+(result==='lose'?'lose':'win');
+  document.getElementById('rTitle').textContent=result==='lose'?'💀 MISSION FAILED':'🏆 COMPLETE';
+  document.getElementById('rStats').innerHTML=`
+    <div style="color:#ff9966;margin-bottom:8px;">${reason}</div>
+    <div>Fires Extinguished: <span class="rv">${firesSaved}</span></div>
+    <div>Civilians Rescued: <span class="rv">${civsRescued}</span></div>
+    <div>Score: <span class="rv">${score}</span></div>`;
+  document.getElementById('rBtns').innerHTML=`
+    <button class="mbtn" onclick="restartLevel()">↺ RETRY</button>
+    <button class="mbtn sec" onclick="quitMenu()">MENU</button>`;
+  document.getElementById('rScreen').classList.add('show');
+}
+
+// ══════════════════════════════════
+//  RENDER
+// ══════════════════════════════════
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawBG();
+  drawPlatforms();
+  for(const h of hydrants) drawHydrant(h);
+  // Smoke
+  for(const s of smoke){
+    ctx.save();ctx.globalAlpha=s.alpha*.55;
+    const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+    sg.addColorStop(0,s.steam?'rgba(200,220,255,.7)':'rgba(50,50,50,.9)');
+    sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  for(const f of fires){if(f.alive)drawFire(f);}
+  for(const c of civilians) drawCiv(c);
+  ctx.save();ctx.fillStyle='#55ccff';
+  for(const d of drops){ctx.globalAlpha=d.life;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+  drawPlayer();
+  if(P.spraying) drawHose();
+  ctx.save();
+  floats.forEach(ft=>{
+    ft.y+=ft.vy*(dt*36);ft.life-=dt;
+    ctx.globalAlpha=Math.min(1,ft.life);
+    ctx.font='bold 14px Rajdhani';ctx.strokeStyle='#000';ctx.lineWidth=3;
+    ctx.strokeText(ft.text,ft.x,ft.y);ctx.fillStyle=ft.color;ctx.fillText(ft.text,ft.x,ft.y);
+  });
+  ctx.restore();
+  floats=floats.filter(ft=>ft.life>0);
+}
+
+function drawBG(){
+  const sk=ctx.createLinearGradient(0,0,0,H);
+  sk.addColorStop(0,'#110200');sk.addColorStop(.6,'#2e0e00');sk.addColorStop(1,'#080100');
+  ctx.fillStyle=sk;ctx.fillRect(0,0,W,H);
+  fires.forEach(f=>{
+    if(!f.alive) return;
+    const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,200);
+    g.addColorStop(0,'rgba(255,70,0,.15)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,200,0,Math.PI*2);ctx.fill();
+  });
+  // Stars
+  ctx.fillStyle='rgba(255,255,200,.3)';
+  for(let i=0;i<24;i++){ctx.beginPath();ctx.arc((Math.sin(i*137.5)*.5+.5)*W,(Math.cos(i*97.3)*.5+.5)*(H*.4),.7,0,Math.PI*2);ctx.fill();}
+  const bg=currentLevel%3;
+  if(bg===0){
+    ctx.fillStyle='#180600';ctx.fillRect(200,H-TILE*9.5,180,TILE*8.5);
+    ctx.beginPath();ctx.moveTo(200,H-TILE*9.5);ctx.lineTo(290,H-TILE*14);ctx.lineTo(380,H-TILE*9.5);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,200,0,.08)';ctx.fillRect(230,H-TILE*7,28,20);ctx.fillRect(315,H-TILE*7,28,20);
+  } else if(bg===1){
+    ctx.fillStyle='#0a1400';
+    for(let i=0;i<10;i++){const tx=40+i*88;ctx.beginPath();ctx.moveTo(tx,H-TILE*4);ctx.lineTo(tx-20,H-TILE);ctx.lineTo(tx+20,H-TILE);ctx.closePath();ctx.fill();}
+  } else {
+    ctx.fillStyle='#060606';
+    for(let i=0;i<6;i++){const bx=20+i*148,bh=70+i%3*45;ctx.fillRect(bx,H-TILE-bh,52,bh);}
+  }
+}
+
+function drawPlatforms(){
+  for(const p of platforms){
+    switch(p.type){
+      case 'ground':
+        ctx.fillStyle='#3a1d00';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#5c3200';ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.fillStyle='#2a4400';
+        for(let i=0;i<Math.floor(p.w/14);i++) ctx.fillRect(p.x+i*14+3,p.y-3,5,4);
+        break;
+      case 'floor':
+        ctx.fillStyle='#5a3814';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#8a5a28';ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.strokeStyle='#3a2008';ctx.lineWidth=1;
+        for(let i=1;i<p.w/TILE;i++){ctx.beginPath();ctx.moveTo(p.x+i*TILE,p.y+4);ctx.lineTo(p.x+i*TILE,p.y+p.h);ctx.stroke();}
+        break;
+      case 'wall':
+        ctx.fillStyle='#5a3018';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.strokeStyle='#3a1808';ctx.lineWidth=1;
+        for(let r=0;r<p.h/8;r++) for(let c=0;c<2;c++) ctx.strokeRect(p.x+c*16+(r%2)*8,p.y+r*8,16,8);
+        break;
+      case 'tree':
+        ctx.fillStyle='#1a3208';ctx.fillRect(p.x,p.y+6,p.w,p.h-6);
+        ctx.fillStyle='#264a10';ctx.fillRect(p.x-2,p.y,p.w+4,10);
+        ctx.fillStyle='#1e3c0c';
+        for(let i=0;i<Math.floor(p.w/14);i++) ctx.fillRect(p.x+i*14,p.y-5,11,8);
+        break;
+      case 'girder':
+        ctx.fillStyle='#252525';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#404040';ctx.fillRect(p.x,p.y,p.w,4);
+        ctx.strokeStyle='#505050';ctx.lineWidth=1;
+        for(let i=1;i<p.w/TILE;i++){ctx.beginPath();ctx.moveTo(p.x+i*TILE,p.y);ctx.lineTo(p.x+i*TILE,p.y+p.h);ctx.stroke();}
+        ctx.fillStyle='rgba(255,190,0,.09)';
+        for(let i=0;i<Math.floor(p.w/18);i+=2) ctx.fillRect(p.x+i*18,p.y,18,p.h);
+        break;
+      case 'tank':
+        ctx.fillStyle='#2a3a44';ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#3a5060';ctx.fillRect(p.x,p.y,p.w,6);
+        ctx.strokeStyle='#1a2a33';ctx.lineWidth=2;ctx.strokeRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='rgba(255,80,0,.1)';ctx.fillRect(p.x,p.y,p.w,p.h);
+        break;
+    }
+  }
+}
+
+function drawHydrant(h){
+  ctx.fillStyle='#aa1a00';ctx.fillRect(h.x-7,h.y-18,14,18);
+  ctx.fillStyle='#dd2a00';ctx.fillRect(h.x-10,h.y-22,20,6);
+  ctx.fillStyle='#ff5500';ctx.fillRect(h.x-5,h.y-26,10,4);
+  ctx.fillStyle='#cc2200';ctx.fillRect(h.x-4,h.y-9,8,5);
+  if(dist(P.x+P.w/2,P.y+P.h/2,h.x,h.y)<70){
+    ctx.save();ctx.globalAlpha=.55;ctx.strokeStyle='#00aaff';ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.arc(h.x,h.y,28,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    if(togOn('togTips')){ctx.fillStyle='#00aaff';ctx.font='11px Rajdhani';ctx.fillText('[R] Refill',h.x-18,h.y-34);}
+  }
+}
+
+function drawFire(f){
+  const now=performance.now()/1000;
+  const fl=.88+Math.sin(now*9+f.x)*.12;
+  const s=f.size*f.intensity*fl;
+  const og=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,s*2.8);
+  og.addColorStop(0,'rgba(255,110,0,.27)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.ellipse(f.x,f.y,s*2.8,s*1.6,0,0,Math.PI*2);ctx.fill();
+  const cg=ctx.createRadialGradient(f.x,f.y-s*.2,s*.08,f.x,f.y,s);
+  cg.addColorStop(0,'rgba(255,255,160,1)');cg.addColorStop(.3,'rgba(255,150,0,.9)');cg.addColorStop(.7,'rgba(255,50,0,.7)');cg.addColorStop(1,'rgba(180,0,0,0)');
+  ctx.fillStyle=cg;ctx.beginPath();
+  for(let i=0;i<=9;i++){
+    const a=(i/9)*Math.PI*2,j=.73+Math.sin(now*7+i*1.4+f.x*.05)*.27;
+    const rx=Math.cos(a)*s*.85*j,ry=Math.sin(a)*s*(i%2===0?1.15:.73)*j;
+    i===0?ctx.moveTo(f.x+rx,f.y+ry):ctx.lineTo(f.x+rx,f.y+ry);
+  }
+  ctx.closePath();ctx.fill();
+  if(f.type!=='A'){
+    ctx.fillStyle=f.type==='B'?'rgba(255,130,0,.85)':'rgba(0,150,255,.85)';
+    ctx.fillRect(f.x-8,f.y-s-14,16,13);
+    ctx.fillStyle='#000';ctx.font='bold 10px Rajdhani';ctx.fillText(f.type,f.x-4,f.y-s-4);
+  }
+}
+
+function drawCiv(c){
+  if(c.rescued) return;
+  const blink=c.state==='panicking'&&Math.floor(performance.now()/350)%2===0;
+  ctx.save();ctx.globalAlpha=blink?.65:1;
+  if(c.state==='unconscious'){
+    ctx.fillStyle='#887766';ctx.fillRect(c.x-4,c.y+c.h*.65,c.w+8,c.h*.35);
+    ctx.fillStyle='#f5c89a';ctx.beginPath();ctx.arc(c.x+c.w,c.y+c.h*.65,6,0,Math.PI*2);ctx.fill();
+  } else {
+    ctx.fillStyle='#2a5db0';ctx.fillRect(c.x+3,c.y+c.h*.4,c.w-6,c.h*.6);
+    ctx.fillStyle='#f5c89a';ctx.beginPath();ctx.arc(c.x+c.w/2,c.y+c.h*.3,c.h*.18,0,Math.PI*2);ctx.fill();
+  }
+  ctx.font='13px serif';ctx.fillText(c.state==='unconscious'?'💤':'❗',c.x-2,c.y-3);
+  if(togOn('togTips')&&dist(P.x+P.w/2,P.y+P.h/2,c.x+c.w/2,c.y+c.h/2)<72){
+    ctx.font='11px Rajdhani';ctx.fillStyle='#39ff14';ctx.fillText('[E] Rescue',c.x-10,c.y-16);
+  }
+  ctx.restore();
+}
+
+function drawPlayer(){
+  const px=P.x,py=P.y,h=P.crouching?P.h*.62:P.h;
+  const now=performance.now()/1000;
+  ctx.save();ctx.translate(px+P.w/2,py);
+  if(P.facing===-1) ctx.scale(-1,1);
+  const lo=P.onGround?(Math.sin(now*11)*3*(Math.abs(P.vx)>.5?1:0)):0;
+  ctx.fillStyle='#1a3a6a';
+  ctx.fillRect(-P.w/2+2,h*.55+lo,7,h*.45-lo);ctx.fillRect(P.w/2-9,h*.55-lo,7,h*.45+lo);
+  ctx.fillStyle='#111';ctx.fillRect(-P.w/2+2,h*.95,7,4);ctx.fillRect(P.w/2-9,h*.95,7,4);
+  ctx.fillStyle='#c83c00';ctx.fillRect(-P.w/2+1,h*.27,P.w-2,h*.32);
+  ctx.fillStyle='#ffdd00';ctx.fillRect(-P.w/2+1,h*.42,P.w-2,3);ctx.fillRect(-P.w/2+1,h*.35,P.w-2,2);
+  ctx.fillStyle='#224499';ctx.fillRect(P.w/2-8,h*.28,7,h*.22);
+  ctx.fillStyle='#f5c89a';ctx.beginPath();ctx.arc(0,h*.19,h*.145,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#aa1e00';ctx.fillRect(-P.w/2+1,h*.05,P.w-2,h*.15);
+  ctx.fillStyle='#881800';ctx.fillRect(-P.w/2-2,h*.11,P.w+4,4);
+  ctx.fillStyle='rgba(100,180,255,.38)';ctx.fillRect(-7,h*.13,14,5);
+  const ha=P.sprayAngle*(P.facing===-1?-1:1);
+  ctx.save();ctx.translate(4,h*.34);ctx.rotate(ha);
+  ctx.fillStyle='#1a1a1a';ctx.fillRect(0,-3,22,6);
+  ctx.fillStyle='#003388';ctx.fillRect(20,-5,10,10);
+  ctx.fillStyle='#555';ctx.fillRect(30,-2,6,4);
+  ctx.restore();ctx.restore();
+}
+
+function drawHose(){
+  const sx=P.x+P.w/2+Math.cos(P.sprayAngle)*16,sy=P.y+P.h*.33+Math.sin(P.sprayAngle)*16;
+  ctx.save();ctx.globalAlpha=.55;ctx.strokeStyle='#44aaff';ctx.lineWidth=5;
+  ctx.setLineDash([9,5]);ctx.lineDashOffset=-performance.now()/45;
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+Math.cos(P.sprayAngle)*90,sy+Math.sin(P.sprayAngle)*90);
+  ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+
+function updateMinimap(){
+  if(!togOn('togMM')) return;
+  mmX.clearRect(0,0,120,60);mmX.fillStyle='rgba(0,0,0,.75)';mmX.fillRect(0,0,120,60);
+  const sx=120/W,sy=60/H;
+  platforms.forEach(p=>{
+    if(p.type==='ground'||p.type==='floor'||p.type==='girder'){mmX.fillStyle='#3a2008';mmX.fillRect(p.x*sx,p.y*sy,p.w*sx,Math.max(1,p.h*sy));}
+  });
+  fires.forEach(f=>{if(f.alive){mmX.fillStyle='#ff4400';mmX.beginPath();mmX.arc(f.x*sx,f.y*sy,2.5,0,Math.PI*2);mmX.fill();}});
+  civilians.forEach(c=>{if(!c.rescued){mmX.fillStyle='#00ff88';mmX.fillRect(c.x*sx,c.y*sy,3,3);}});
+  hydrants.forEach(h=>{mmX.fillStyle='#0088ff';mmX.beginPath();mmX.arc(h.x*sx,h.y*sy,2,0,Math.PI*2);mmX.fill();});
+  mmX.fillStyle='#ffff00';mmX.fillRect(P.x*sx-2,P.y*sy-2,5,5);
+}
+
+// ══════════════════════════════════
+//  INPUT
+// ══════════════════════════════════
+window.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+  if(e.key==='f'||e.key==='F') sprayHeld=true;
+  if((e.key==='Escape'||e.key==='p'||e.key==='P')&&(gstate==='playing'||gstate==='paused')) togglePause();
+});
+window.addEventListener('keyup',e=>{keys[e.key]=false;if(e.key==='f'||e.key==='F')sprayHeld=false;});
+gc.addEventListener('mousemove',e=>{
+  const r=gc.getBoundingClientRect();mouseX=(e.clientX-r.left)*(W/r.width);mouseY=(e.clientY-r.top)*(H/r.height);
+});
+gc.addEventListener('mousedown',e=>{if(e.button===0)sprayHeld=true;});
+gc.addEventListener('mouseup',e=>{if(e.button===0)sprayHeld=false;});
+gc.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ══════════════════════════════════
+//  BOOT
+// ══════════════════════════════════
+(function boot(){
+  showScreen('mainMenu');
+  function idle(){
+    ctx.fillStyle='#08020000';ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#0a0200';ctx.fillRect(0,0,W,H);
+    const now=performance.now()/1000;
+    for(let i=0;i<6;i++){
+      const fx=70+i*155,fy=H-55,s=20+Math.sin(now*3+i*1.2)*6;
+      const g=ctx.createRadialGradient(fx,fy,0,fx,fy,s*2.2);
+      g.addColorStop(0,'rgba(255,200,60,.45)');g.addColorStop(.4,'rgba(255,70,0,.35)');g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(fx,fy,s*2.2,0,Math.PI*2);ctx.fill();
+    }
+    requestAnimationFrame(idle);
+  }
+  idle();
+})();
+</script>
+</body>
+</html>
