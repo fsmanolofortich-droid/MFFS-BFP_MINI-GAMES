@@ -1,0 +1,313 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#game{min-height:600px;background:linear-gradient(180deg,#87CEEB 0%,#B0E0FF 40%,#E8F4F8 100%);border-radius:16px;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;padding:0 0 20px}
+#topbar{width:100%;background:rgba(255,100,30,0.92);display:flex;align-items:center;justify-content:space-between;padding:10px 18px;color:#fff}
+#stars-bar{display:flex;gap:4px}
+.star{font-size:22px;opacity:.4;transition:opacity .3s}
+.star.lit{opacity:1}
+#level-label{font-size:13px;font-weight:500;background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px}
+#score-display{font-size:14px;font-weight:500}
+#ff-wrap{display:flex;flex-direction:column;align-items:center;margin:14px 0 6px;position:relative}
+#ff-bubble{background:#fff;border-radius:16px;padding:10px 16px;max-width:320px;text-align:center;font-size:14px;line-height:1.5;color:#333;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+#ff-bubble::after{content:'';position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#fff}
+#ff-char{font-size:64px;margin-top:14px;line-height:1}
+#scenario-img{font-size:80px;margin:10px 0 4px;text-align:center;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+#scenario-title{font-size:17px;font-weight:500;color:#333;text-align:center;margin:4px 0 12px;padding:0 20px}
+#choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;padding:0 14px}
+.choice-btn{background:#fff;border:2.5px solid #ddd;border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
+.choice-btn:hover{transform:scale(1.04);border-color:#aaa}
+.choice-btn:active{transform:scale(.97)}
+.choice-emoji{font-size:44px;line-height:1}
+.choice-label{font-size:12px;color:#555;text-align:center;line-height:1.3}
+.correct-flash{border-color:#4CAF50!important;background:#E8F5E9!important;animation:correctPulse .5s ease}
+.wrong-flash{border-color:#e53935!important;background:#FFEBEE!important;animation:wrongShake .4s ease}
+@keyframes correctPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#feedback-bar{width:100%;max-width:420px;margin:10px 14px 0;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;text-align:center;display:none}
+.fb-correct{background:#E8F5E9;color:#2e7d32;border:1.5px solid #A5D6A7}
+.fb-wrong{background:#FFEBEE;color:#c62828;border:1.5px solid #FFCDD2}
+#next-btn{display:none;margin-top:14px;background:#FF6B1A;color:#fff;border:none;border-radius:30px;padding:12px 32px;font-size:15px;font-weight:500;cursor:pointer;transition:transform .15s}
+#next-btn:hover{transform:scale(1.04)}
+#progress{display:flex;gap:6px;margin-top:12px}
+.prog-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4)}
+.prog-dot.done{background:#fff}
+.prog-dot.current{background:#FF6B1A;border:2px solid #fff}
+#end-screen{display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;gap:10px}
+#end-screen h2{font-size:24px;color:#333}
+#end-screen p{font-size:15px;color:#555;line-height:1.6}
+#end-stars{font-size:40px;letter-spacing:4px}
+#cert-box{background:#fff;border:2px dashed #FF6B1A;border-radius:16px;padding:18px 24px;margin:10px 0;max-width:320px}
+#cert-box h3{font-size:16px;color:#FF6B1A;font-weight:500}
+#cert-box p{font-size:13px;color:#555;margin-top:6px}
+#restart-btn{background:#FF6B1A;color:#fff;border:none;border-radius:30px;padding:12px 32px;font-size:15px;cursor:pointer;margin-top:10px}
+#tips{background:rgba(255,255,255,.85);border-radius:14px;padding:12px 16px;max-width:360px;width:calc(100% - 28px);margin-top:12px}
+#tips h4{font-size:13px;color:#FF6B1A;font-weight:500;margin-bottom:6px}
+.tip-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#444;margin:4px 0}
+.tip-ico{font-size:18px;width:24px;text-align:center}
+</style>
+
+<div id="game">
+  <div id="topbar">
+    <div id="stars-bar">
+      <span class="star" id="s1">⭐</span>
+      <span class="star" id="s2">⭐</span>
+      <span class="star" id="s3">⭐</span>
+      <span class="star" id="s4">⭐</span>
+      <span class="star" id="s5">⭐</span>
+      <span class="star" id="s6">⭐</span>
+    </div>
+    <div id="level-label">Level 1 of 6</div>
+    <div id="score-display">Score: 0</div>
+  </div>
+
+  <div id="ff-wrap">
+    <div id="ff-bubble">Hi! I'm Sparky! Let's learn fire safety together! 🔥</div>
+    <div id="ff-char">🧑‍🚒</div>
+  </div>
+
+  <div id="scenario-img">🔥</div>
+  <div id="scenario-title">A fire starts in the kitchen!</div>
+
+  <div id="choices"></div>
+
+  <div id="feedback-bar"></div>
+  <button id="next-btn" onclick="nextLevel()">Next Level ➜</button>
+
+  <div id="progress"></div>
+
+  <div id="tips">
+    <h4>Fire Safety Tips</h4>
+    <div class="tip-row"><span class="tip-ico">🛑</span> Stop, Drop, and Roll if clothes catch fire</div>
+    <div class="tip-row"><span class="tip-ico">🦎</span> Crawl low under smoke to breathe</div>
+    <div class="tip-row"><span class="tip-ico">🚪</span> Check doors before opening — feel for heat</div>
+    <div class="tip-row"><span class="tip-ico">📞</span> Call 911 from outside the building</div>
+    <div class="tip-row"><span class="tip-ico">🚫</span> Never hide — firefighters can't find you!</div>
+  </div>
+</div>
+
+<div id="end-screen" style="display:none;min-height:600px;background:linear-gradient(180deg,#87CEEB,#B0E0FF 60%,#E8F4F8);border-radius:16px;align-items:center;justify-content:center;padding:30px 20px;text-align:center;gap:10px;flex-direction:column">
+  <div style="font-size:60px">🧑‍🚒</div>
+  <h2 style="font-size:24px;color:#333">You did it!</h2>
+  <div id="end-stars" style="font-size:40px;letter-spacing:4px"></div>
+  <p style="font-size:15px;color:#555;line-height:1.6;max-width:300px">Amazing work, Fire Safety Champion! You know exactly what to do in an emergency!</p>
+  <div style="background:#fff;border:2px dashed #FF6B1A;border-radius:16px;padding:18px 24px;max-width:300px;width:100%">
+    <div style="font-size:30px;margin-bottom:8px">🏅</div>
+    <div style="font-size:16px;color:#FF6B1A;font-weight:500">Certificate of Completion</div>
+    <div id="end-score" style="font-size:13px;color:#555;margin-top:6px">You completed all 6 fire safety challenges!</div>
+    <div id="end-grade" style="font-size:13px;color:#555;margin-top:4px"></div>
+  </div>
+  <button id="restart-btn" onclick="restartGame()" style="background:#FF6B1A;color:#fff;border:none;border-radius:30px;padding:12px 32px;font-size:15px;cursor:pointer;margin-top:10px">Play Again 🔄</button>
+</div>
+
+<script>
+const scenarios=[
+  {
+    level:1,
+    icon:'🍳🔥',
+    title:'A fire starts in the kitchen!',
+    sparky:"Uh oh! There's a fire on the stove! What should we do first?",
+    choices:[
+      {emoji:'💧',label:'Pour water on it',correct:false,feedback:'Water can make oil fires BIGGER! Never pour water on a kitchen fire.'},
+      {emoji:'🧯',label:'Use a fire extinguisher',correct:true,feedback:'YES! A fire extinguisher is the right tool for a kitchen fire! Great job!'},
+      {emoji:'🏃',label:'Panic and run',correct:false,feedback:'Running in panic is dangerous! Stay calm and use the fire extinguisher or leave calmly.'},
+      {emoji:'📺',label:'Keep cooking',correct:false,feedback:'Never ignore a fire! Get help immediately and do not continue cooking.'}
+    ]
+  },
+  {
+    level:2,
+    icon:'💨🌫️',
+    title:'Smoke is filling the room!',
+    sparky:"There's lots of smoke! Smoke rises up high. How do you stay safe?",
+    choices:[
+      {emoji:'🦎',label:'Crawl low to the exit',correct:true,feedback:'PERFECT! Crawl low under the smoke where the air is cleaner. Smart move!'},
+      {emoji:'🏃',label:'Stand up and run',correct:false,feedback:'Standing up in smoke means breathing in dangerous fumes. Always crawl low!'},
+      {emoji:'🛏️',label:'Hide under the bed',correct:false,feedback:'Never hide! Firefighters cannot find you if you hide. Go to the exit!'},
+      {emoji:'🪟',label:'Open windows first',correct:false,feedback:'Do not waste time opening windows. Crawl low to the exit immediately!'}
+    ]
+  },
+  {
+    level:3,
+    icon:'🔥👕',
+    title:'Your clothes are on fire!',
+    sparky:"Oh no! Someone's clothes are on fire! What is the right thing to do?",
+    choices:[
+      {emoji:'🏃',label:'Run away fast',correct:false,feedback:'Running makes fire BIGGER because it gives oxygen to the flames. Stop!'},
+      {emoji:'🛑',label:'Stop, Drop & Roll',correct:true,feedback:'AMAZING! Stop, Drop, and Roll smothers the fire. You remembered the rule!'},
+      {emoji:'💧',label:'Jump into water',correct:false,feedback:'Good thinking, but you cannot always find water fast. Stop, Drop, and Roll works right away!'},
+      {emoji:'😱',label:'Scream and panic',correct:false,feedback:'Panicking wastes precious time. Remember: Stop, Drop, and Roll!'}
+    ]
+  },
+  {
+    level:4,
+    icon:'🚨📢',
+    title:'The fire alarm goes off!',
+    sparky:"BEEP BEEP! The fire alarm is ringing! What do you do right away?",
+    choices:[
+      {emoji:'😴',label:'Ignore it and sleep',correct:false,feedback:'NEVER ignore a fire alarm! Always treat it as real and get out immediately.'},
+      {emoji:'🧺',label:'Collect your things first',correct:false,feedback:'Do not collect belongings! Things can be replaced, but you cannot. Leave now!'},
+      {emoji:'🚶',label:'Walk calmly to exit',correct:true,feedback:'GREAT! Walk calmly to the nearest exit. Do not run, do not use elevators!'},
+      {emoji:'🛗',label:'Take the elevator',correct:false,feedback:'Never use the elevator during a fire! The elevator could stop. Use the stairs!'}
+    ]
+  },
+  {
+    level:5,
+    icon:'🏠🔥',
+    title:"You're trapped inside a house!",
+    sparky:"You cannot get out! Smoke is coming in. What should you do?",
+    choices:[
+      {emoji:'🛏️',label:'Hide under the bed',correct:false,feedback:'Hiding makes it impossible for firefighters to find you. Signal from a window!'},
+      {emoji:'🪟',label:'Signal from a window',correct:true,feedback:'YES! Go to a window and signal for help. Wave something bright so rescuers see you!'},
+      {emoji:'🔥',label:'Open the door fast',correct:false,feedback:'Feel the door first! If it is hot, fire is on the other side. Do not open it!'},
+      {emoji:'😶',label:'Stay quiet and wait',correct:false,feedback:'Make noise and signal from a window! Firefighters need to know where you are.'}
+    ]
+  },
+  {
+    level:6,
+    icon:'📞🚒',
+    title:'Call for help!',
+    sparky:"You are outside and safe! Now you need to call for help. What do you do?",
+    choices:[
+      {emoji:'🏃',label:'Go back inside',correct:false,feedback:'NEVER go back into a burning building! Stay outside where it is safe.'},
+      {emoji:'📞',label:'Call 911',correct:true,feedback:'PERFECT! Call 911 from outside! Tell them your address and stay on the phone.'},
+      {emoji:'📸',label:'Take photos first',correct:false,feedback:'Do not take photos! Call 911 immediately so help can arrive fast.'},
+      {emoji:'😶',label:'Wait for someone else',correct:false,feedback:'Do not wait! Every second counts. You call 911 yourself right away!'}
+    ]
+  }
+];
+
+let current=0, score=0, answered=false;
+
+function buildProgress(){
+  const p=document.getElementById('progress');
+  p.innerHTML='';
+  scenarios.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='prog-dot'+(i<current?' done':i===current?' current':'');
+    p.appendChild(d);
+  });
+}
+
+function renderScenario(){
+  const s=scenarios[current];
+  answered=false;
+  document.getElementById('ff-bubble').textContent=s.sparky;
+  document.getElementById('scenario-img').textContent=s.icon;
+  document.getElementById('scenario-title').textContent=s.title;
+  document.getElementById('level-label').textContent=`Level ${s.level} of 6`;
+  const fb=document.getElementById('feedback-bar');
+  fb.style.display='none';
+  const nb=document.getElementById('next-btn');
+  nb.style.display='none';
+  const grid=document.getElementById('choices');
+  grid.innerHTML='';
+  s.choices.forEach((c,i)=>{
+    const btn=document.createElement('div');
+    btn.className='choice-btn';
+    btn.innerHTML=`<div class="choice-emoji">${c.emoji}</div><div class="choice-label">${c.label}</div>`;
+    btn.onclick=()=>handleChoice(c,btn,i);
+    grid.appendChild(btn);
+  });
+  buildProgress();
+  updateStars();
+}
+
+function handleChoice(c,btn,idx){
+  if(answered)return;
+  answered=true;
+  const fb=document.getElementById('feedback-bar');
+  const nb=document.getElementById('next-btn');
+  if(c.correct){
+    btn.classList.add('correct-flash');
+    score+=10;
+    document.getElementById('score-display').textContent=`Score: ${score}`;
+    litStarForLevel(current);
+    fb.className='fb-correct';
+    fb.textContent='✅ '+c.feedback;
+    fb.style.display='block';
+    document.getElementById('ff-bubble').textContent='Excellent work! You know your fire safety! 🎉';
+    playCorrect();
+  } else {
+    btn.classList.add('wrong-flash');
+    fb.className='fb-wrong';
+    fb.textContent='❌ '+c.feedback;
+    fb.style.display='block';
+    document.getElementById('ff-bubble').textContent="Hmm, let's think again! You can try once more! 💪";
+    playWrong();
+    setTimeout(()=>{
+      btn.classList.remove('wrong-flash');
+      answered=false;
+    },1200);
+    return;
+  }
+  nb.style.display=current<scenarios.length-1?'block':'none';
+  if(current===scenarios.length-1){
+    setTimeout(showEnd,1400);
+  }
+}
+
+function litStarForLevel(lvl){
+  const s=document.getElementById('s'+(lvl+1));
+  if(s) s.classList.add('lit');
+}
+
+function updateStars(){
+  for(let i=1;i<=6;i++){
+    const s=document.getElementById('s'+i);
+    if(s) s.classList.toggle('lit',i-1<current);
+  }
+}
+
+function nextLevel(){
+  current++;
+  if(current>=scenarios.length){showEnd();return;}
+  renderScenario();
+}
+
+function showEnd(){
+  document.getElementById('game').style.display='none';
+  const e=document.getElementById('end-screen');
+  e.style.display='flex';
+  const stars=score>=60?'⭐⭐⭐':score>=40?'⭐⭐':'⭐';
+  document.getElementById('end-stars').textContent=stars;
+  document.getElementById('end-score').textContent=`You completed all 6 fire safety challenges!`;
+  document.getElementById('end-grade').textContent=`Final Score: ${score}/60 — ${score>=60?'Fire Safety Champion!':score>=40?'Great learner!':'Keep practicing!'}`;
+}
+
+function restartGame(){
+  current=0;score=0;answered=false;
+  document.getElementById('end-screen').style.display='none';
+  document.getElementById('game').style.display='flex';
+  document.getElementById('score-display').textContent='Score: 0';
+  for(let i=1;i<=6;i++){const s=document.getElementById('s'+i);if(s)s.classList.remove('lit');}
+  renderScenario();
+}
+
+function playCorrect(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [523,659,784].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=f;g.gain.setValueAtTime(0.15,ctx.currentTime+i*0.12);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.25);
+      o.start(ctx.currentTime+i*0.12);o.stop(ctx.currentTime+i*0.12+0.25);
+    });
+  }catch(e){}
+}
+
+function playWrong(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=200;g.gain.setValueAtTime(0.12,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    o.start();o.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
+
+renderScenario();
+</script>
