@@ -3,95 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 FIRE MINI GAMES</title>
+<title>Fire Mini Games</title>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
 body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#0a0a0a;
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(135deg,#0a0a0a,#140400,#0a0a0a);
   color:#fff;
+  min-height:100vh;
+}
+
+/* HEADER */
+header{
   text-align:center;
+  padding:30px 20px 10px;
 }
 
-h1{
-  margin:20px;
-  color:#ff4500;
+header h1{
+  font-weight:600;
+  font-size:28px;
+  letter-spacing:2px;
+  color:#ff6a00;
 }
 
+header p{
+  font-size:13px;
+  color:#aaa;
+  margin-top:5px;
+}
+
+/* GRID */
 #games{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:15px;
-  padding:20px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  padding:30px;
 }
 
+/* CARD */
 .card{
-  background:#1a1a1a;
-  border:1px solid #ff4500;
-  padding:20px;
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
   cursor:pointer;
-  transition:0.2s;
-  border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,106,0,0.2);
+  transition:0.25s ease;
 }
 
+/* IMAGE */
+.card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  opacity:0.85;
+  transition:0.3s;
+}
+
+/* OVERLAY */
+.card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+/* TEXT */
+.card-content{
+  position:absolute;
+  bottom:0;
+  padding:12px;
+  z-index:2;
+}
+
+.card h3{
+  font-size:15px;
+  font-weight:500;
+}
+
+.card span{
+  font-size:11px;
+  color:#ffb380;
+}
+
+/* HOVER EFFECT */
 .card:hover{
-  transform:scale(1.05);
-  background:#ff450020;
+  transform:translateY(-6px) scale(1.02);
+  border-color:#ff6a00;
+  box-shadow:0 10px 30px rgba(255,106,0,0.2);
 }
 
+.card:hover img{
+  transform:scale(1.1);
+  opacity:1;
+}
+
+/* LOADING */
 .loading{
-  color:#aaa;
+  text-align:center;
+  padding:40px;
+  color:#777;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🔥 FIRE MINI GAMES</h1>
+<header>
+  <h1>🔥 Fire Mini Games</h1>
+  <p>Interactive Safety & Emergency Training</p>
+</header>
+
 <div id="games" class="loading">Loading games...</div>
 
 <script>
 const repoOwner = "fsmanolofortich-droid";
 const repoName = "MFFS-BFP_MINI-GAMES";
-const branch = "main";
-
-// GitHub API URL
-const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
 
 const container = document.getElementById("games");
 
 async function loadGames(){
   try{
-    const res = await fetch(apiURL);
+    const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/`);
     const data = await res.json();
 
     container.innerHTML = "";
 
-    data.forEach(item => {
+    for(const item of data){
 
-      // ONLY show folders or HTML files
+      // ❌ skip index
+      if(item.name.toLowerCase() === "index.html") continue;
+
       if(item.type === "dir" || item.name.endsWith(".html")){
 
-        const gameName = item.name.replace(".html","");
+        const name = item.name.replace(".html","");
 
-        // GitHub Pages link (important)
-        const gameURL = `https://${repoOwner}.github.io/${repoName}/${item.name}`;
+        const url = item.type === "dir"
+          ? `https://${repoOwner}.github.io/${repoName}/${item.name}/`
+          : `https://${repoOwner}.github.io/${repoName}/${item.name}`;
+
+        // 🖼️ Try to load preview image
+        let preview = item.type === "dir"
+          ? `https://${repoOwner}.github.io/${repoName}/${item.name}/preview.png`
+          : `https://${repoOwner}.github.io/${repoName}/preview.png`;
 
         const card = document.createElement("div");
         card.className = "card";
+
         card.innerHTML = `
-          <h3>${gameName}</h3>
-          <p>Click to Play</p>
+          <img src="${preview}" onerror="this.src='https://via.placeholder.com/400x200/111/ff6a00?text=Fire+Game'">
+          <div class="card-content">
+            <h3>${name}</h3>
+            <span>Click to play</span>
+          </div>
         `;
 
-        card.onclick = () => {
-          window.open(gameURL, "_blank");
-        };
+        card.onclick = () => window.open(url, "_blank");
 
         container.appendChild(card);
       }
-    });
+    }
 
     if(container.innerHTML === ""){
       container.innerHTML = "<p>No games found.</p>";
